@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keep Focus</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Keep Focus</h1>
+      <p class="subtitle">Build better focus habits, one decision at a time</p>
+    </header>
+
+    <div class="streak-section" id="streakSection" style="display: none;">
+      <div class="streak-badge">
+        <span class="streak-icon">🔥</span>
+        <span class="streak-text">Focus streak: <strong id="streakCount">0</strong> sessions</span>
+      </div>
+    </div>
+
+    <div class="blocked-sites-section">
+      <h2>Blocked Sites</h2>
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="siteInput" 
+          placeholder="Add domain or URL (e.g., twitter.com)"
+          autocomplete="off"
+        >
+        <button id="addBtn" class="btn-primary">Add</button>
+      </div>
+      
+      <ul id="blockedList" class="blocked-list">
+        <!-- Sites will be dynamically added here -->
+      </ul>
+    </div>
+
+    <div class="footer">
+      <p class="atomic-habits-quote">"Every action you take is a vote for the type of person you wish to become."</p>
+      <p class="quote-author">— James Clear, Atomic Habits</p>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
+
