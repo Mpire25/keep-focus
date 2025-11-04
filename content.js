@@ -120,7 +120,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: #fefdf7;
           min-height: 100vh;
           display: flex;
           align-items: center;
@@ -138,21 +138,21 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
           background: white;
           border-radius: 16px;
           padding: 40px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 20px 60px rgba(212, 184, 150, 0.15);
           text-align: center;
         }
         
         .streak-display {
           margin-bottom: 24px;
           padding: 12px;
-          background: #f8f9fa;
+          background: #f5f7fa;
           border-radius: 8px;
           font-size: 14px;
           color: #495057;
         }
         
         .streak-display strong {
-          color: #667eea;
+          color: #d4b896;
           font-weight: 600;
         }
         
@@ -189,7 +189,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         
         .reason-input:focus {
           outline: none;
-          border-color: #667eea;
+          border-color: #d4b896;
         }
         
         .timer-section {
@@ -199,7 +199,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         .timer-display {
           font-size: 48px;
           font-weight: 700;
-          color: #667eea;
+          color: #d4b896;
           margin-bottom: 8px;
         }
         
@@ -211,7 +211,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         .unlock-btn {
           width: 100%;
           padding: 14px 28px;
-          background: #667eea;
+          background: #d4b896;
           color: white;
           border: none;
           border-radius: 8px;
@@ -223,9 +223,9 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         }
         
         .unlock-btn:hover:not(:disabled) {
-          background: #5568d3;
+          background: #c9a883;
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3);
         }
         
         .unlock-btn:disabled {
