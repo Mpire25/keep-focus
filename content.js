@@ -23,10 +23,9 @@
     const blockedHostname = blockedParts[0];
     const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
     
-    // Check if hostnames match (domain must match)
-    const hostnameMatch = currentHostname === blockedHostname ||
-                          currentHostname.includes(blockedHostname) ||
-                          blockedHostname.includes(currentHostname);
+    // Check if hostnames match (domain must match exactly)
+    // Use exact match only - this prevents false positives from substring matches
+    const hostnameMatch = currentHostname === blockedHostname;
     
     if (!hostnameMatch) {
       return false; // Different domain, not blocked
@@ -109,10 +108,9 @@ function getSiteKey(normalizedUrl, blockedSites) {
     const blockedHostname = blockedParts[0];
     const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
     
-    // Check if hostnames match (domain must match)
-    const hostnameMatch = currentHostname === blockedHostname ||
-                          currentHostname.includes(blockedHostname) ||
-                          blockedHostname.includes(currentHostname);
+    // Check if hostnames match (domain must match exactly)
+    // Use exact match only - this prevents false positives from substring matches
+    const hostnameMatch = currentHostname === blockedHostname;
     
     if (!hostnameMatch) {
       continue; // Different domain, skip
