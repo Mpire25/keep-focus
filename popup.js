@@ -108,7 +108,8 @@ function normalizeUrl(url) {
   url = url.replace(/\/$/, '');
   // Remove www prefix (optional - you might want to keep this)
   // url = url.replace(/^www\./, '');
-  return url;
+  // Convert to lowercase for case-insensitive matching
+  return url.toLowerCase();
 }
 
 // Escape HTML to prevent XSS

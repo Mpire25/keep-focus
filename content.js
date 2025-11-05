@@ -16,17 +16,35 @@
   // Check if current site is blocked
   const urlParts = normalizedUrl.split('/');
   const currentHostname = urlParts[0];
+  const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
+  
   const isBlocked = blockedSites.some(blockedSite => {
-    // Match if the normalized URL contains the blocked site pattern
-    // or if the hostnames match
     const blockedParts = blockedSite.split('/');
     const blockedHostname = blockedParts[0];
+    const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
     
-    return normalizedUrl.includes(blockedSite) || 
-           blockedSite === normalizedUrl ||
-           currentHostname === blockedHostname ||
-           currentHostname.includes(blockedHostname) ||
-           blockedHostname.includes(currentHostname);
+    // Check if hostnames match (domain must match)
+    const hostnameMatch = currentHostname === blockedHostname ||
+                          currentHostname.includes(blockedHostname) ||
+                          blockedHostname.includes(currentHostname);
+    
+    if (!hostnameMatch) {
+      return false; // Different domain, not blocked
+    }
+    
+    // If blocked site has no path (domain-only block), block everything on that domain
+    if (!blockedPath) {
+      return true;
+    }
+    
+    // If blocked site has a path (path-specific block), only block if current URL matches that path
+    // Block if current URL matches exactly or starts with the blocked path followed by '/'
+    // e.g., "youtube.com/shorts" blocks "youtube.com/shorts" and "youtube.com/shorts/anything"
+    // but NOT "youtube.com/shorts-videos" (must be exact match or subpath)
+    return normalizedUrl === blockedSite || 
+           normalizedUrl.startsWith(blockedSite + '/') ||
+           currentPath === blockedPath ||
+           currentPath.startsWith(blockedPath + '/');
   });
 
   if (!isBlocked) {
@@ -71,9 +89,11 @@ function normalizeUrl(url) {
     let normalized = urlObj.hostname + urlObj.pathname;
     // Remove trailing slash
     normalized = normalized.replace(/\/$/, '');
-    return normalized;
+    // Convert to lowercase for case-insensitive matching
+    return normalized.toLowerCase();
   } catch (e) {
-    return url;
+    // If URL parsing fails, try to lowercase the input
+    return url.toLowerCase();
   }
 }
 
@@ -82,16 +102,33 @@ function getSiteKey(normalizedUrl, blockedSites) {
   // Find the matching blocked site pattern
   const urlParts = normalizedUrl.split('/');
   const currentHostname = urlParts[0];
+  const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
   
   for (const blockedSite of blockedSites) {
     const blockedParts = blockedSite.split('/');
     const blockedHostname = blockedParts[0];
+    const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
     
-    if (normalizedUrl.includes(blockedSite) || 
-        blockedSite === normalizedUrl ||
-        currentHostname === blockedHostname ||
-        currentHostname.includes(blockedHostname) ||
-        blockedHostname.includes(currentHostname)) {
+    // Check if hostnames match (domain must match)
+    const hostnameMatch = currentHostname === blockedHostname ||
+                          currentHostname.includes(blockedHostname) ||
+                          blockedHostname.includes(currentHostname);
+    
+    if (!hostnameMatch) {
+      continue; // Different domain, skip
+    }
+    
+    // If blocked site has no path (domain-only block), match
+    if (!blockedPath) {
+      return blockedSite;
+    }
+    
+    // If blocked site has a path (path-specific block), only match if current URL matches that path
+    // Match if current URL matches exactly or starts with the blocked path followed by '/'
+    if (normalizedUrl === blockedSite || 
+        normalizedUrl.startsWith(blockedSite + '/') ||
+        currentPath === blockedPath ||
+        currentPath.startsWith(blockedPath + '/')) {
       return blockedSite;
     }
   }
