@@ -120,6 +120,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       align-items: center;
       justify-content: center;
       padding: 20px;
+      padding-bottom: 90px;
       color: #333;
     }
     
@@ -186,8 +187,19 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       border-color: #d4b896;
     }
     
+    .reason-input:disabled {
+      background: #f5f7fa;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    
     .timer-section {
       margin-bottom: 24px;
+      display: none;
+    }
+    
+    .timer-section.visible {
+      display: block;
     }
     
     .timer-display {
@@ -202,6 +214,41 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       color: #6c757d;
     }
     
+    .submit-reason-btn {
+      width: 100%;
+      padding: 14px 28px;
+      background: #d4b896;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      margin-bottom: 20px;
+    }
+    
+    .submit-reason-btn:hover:not(:disabled) {
+      background: #c9a883;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3);
+    }
+    
+    .submit-reason-btn:disabled {
+      background: #adb5bd;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .submit-reason-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    
+    .submit-reason-btn.hidden {
+      display: none;
+    }
+    
     .unlock-btn {
       width: 100%;
       padding: 14px 28px;
@@ -214,6 +261,11 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       cursor: pointer;
       transition: all 0.2s;
       font-family: inherit;
+      display: none;
+    }
+    
+    .unlock-btn.visible {
+      display: block;
     }
     
     .unlock-btn:hover:not(:disabled) {
@@ -251,10 +303,35 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       color: #adb5bd;
     }
     
-    .close-tab-hint {
-      margin-top: 20px;
-      font-size: 13px;
-      color: #6c757d;
+    .close-tab-btn {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      padding: 18px 28px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 0;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      z-index: 1000;
+      box-shadow: 0 -4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .close-tab-btn:hover {
+      background: #218838;
+      transform: translateY(-2px);
+      box-shadow: 0 -6px 16px rgba(40, 167, 69, 0.4);
+    }
+    
+    .close-tab-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 -2px 8px rgba(40, 167, 69, 0.3);
     }
   `;
   document.head.appendChild(style);
@@ -302,7 +379,15 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   reasonInput.autocomplete = 'off';
   focusCard.appendChild(reasonInput);
   
-  // Add timer section
+  // Add submit reason button
+  const submitReasonBtn = document.createElement('button');
+  submitReasonBtn.id = 'submitReasonBtn';
+  submitReasonBtn.className = 'submit-reason-btn';
+  submitReasonBtn.disabled = true;
+  submitReasonBtn.textContent = 'Submit Reason';
+  focusCard.appendChild(submitReasonBtn);
+  
+  // Add timer section (hidden initially)
   const timerSection = document.createElement('div');
   timerSection.className = 'timer-section';
   
@@ -319,19 +404,13 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   timerSection.appendChild(timerLabel);
   focusCard.appendChild(timerSection);
   
-  // Add unlock button
+  // Add unlock button (hidden initially)
   const unlockBtn = document.createElement('button');
   unlockBtn.id = 'unlockBtn';
   unlockBtn.className = 'unlock-btn';
   unlockBtn.disabled = true;
-  unlockBtn.textContent = 'Continue (15s)';
+  unlockBtn.textContent = 'Continue';
   focusCard.appendChild(unlockBtn);
-  
-  // Add close tab hint
-  const closeTabHint = document.createElement('div');
-  closeTabHint.className = 'close-tab-hint';
-  closeTabHint.textContent = 'Close this tab to increase your focus streak';
-  focusCard.appendChild(closeTabHint);
   
   // Add quote section
   const quoteSection = document.createElement('div');
@@ -353,15 +432,53 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   focusBlocker.appendChild(focusCard);
   body.appendChild(focusBlocker);
   
+  // Add sticky close tab button at the bottom
+  const closeTabBtn = document.createElement('button');
+  closeTabBtn.id = 'closeTabBtn';
+  closeTabBtn.className = 'close-tab-btn';
+  closeTabBtn.textContent = 'Stay Focused - Close Tab';
+  body.appendChild(closeTabBtn);
+  
+  // Close tab button handler
+  closeTabBtn.addEventListener('click', () => {
+    // Try to close the tab, if that doesn't work, redirect to Google
+    window.close();
+    
+    // If window.close() doesn't work (e.g., tab wasn't opened by script),
+    // redirect to Google homepage after a short delay
+    setTimeout(() => {
+      window.location.href = 'https://www.google.com';
+    }, 100);
+  });
+  
   // Timer functionality
   const TIMER_DURATION = 15; // seconds
   const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
   
   let timeRemaining = TIMER_DURATION;
   let timerInterval;
+  let timerStarted = false;
+  
+  // Check if submit reason button can be enabled
+  function checkSubmitReasonButton() {
+    const reason = reasonInput.value.trim();
+    submitReasonBtn.disabled = reason.length === 0;
+  }
   
   // Start timer
   function startTimer() {
+    if (timerStarted) return;
+    timerStarted = true;
+    
+    // Show timer section
+    timerSection.classList.add('visible');
+    
+    // Hide submit reason button
+    submitReasonBtn.classList.add('hidden');
+    
+    // Disable reason input
+    reasonInput.disabled = true;
+    
     timerInterval = setInterval(() => {
       timeRemaining--;
       timerDisplay.textContent = timeRemaining;
@@ -379,13 +496,21 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     const reason = reasonInput.value.trim();
     if (timeRemaining <= 0 && reason.length > 0) {
       unlockBtn.disabled = false;
-      unlockBtn.textContent = 'Continue';
+      unlockBtn.classList.add('visible');
     }
   }
   
   // Reason input handler
   reasonInput.addEventListener('input', () => {
-    checkIfCanUnlock();
+    checkSubmitReasonButton();
+  });
+  
+  // Submit reason button handler
+  submitReasonBtn.addEventListener('click', () => {
+    const reason = reasonInput.value.trim();
+    if (reason.length > 0) {
+      startTimer();
+    }
   });
   
   // Unlock button handler
@@ -411,7 +536,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }
   });
   
-  // Start the timer
-  startTimer();
+  // Initialize submit reason button state
+  checkSubmitReasonButton();
 }
 
