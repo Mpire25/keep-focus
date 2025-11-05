@@ -100,19 +100,48 @@ function getSiteKey(normalizedUrl, blockedSites) {
 
 // Show the blocking overlay
 function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
-  // Prevent page content from loading
-  document.documentElement.innerHTML = '';
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      showBlockOverlay(normalizedUrl, siteKey, currentStreak);
+    });
+    return;
+  }
+  
+  // Check if overlay already exists
+  let overlay = document.getElementById('keep-focus-overlay');
+  if (overlay) {
+    return; // Overlay already shown
+  }
+  
+  // Hide all existing body content without destroying it
+  const body = document.body;
+  if (body) {
+    // Hide all body children
+    Array.from(body.children).forEach(child => {
+      if (child.id !== 'keep-focus-overlay') {
+        child.style.display = 'none';
+      }
+    });
+    // Also hide any direct text nodes by wrapping content
+    body.style.overflow = 'hidden';
+  }
+  
+  // Create overlay container
+  overlay = document.createElement('div');
+  overlay.id = 'keep-focus-overlay';
   
   // Create and inject styles
   const style = document.createElement('style');
+  style.id = 'keep-focus-styles';
   style.textContent = `
-    * {
+    #keep-focus-overlay * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
     
-    body {
+    #keep-focus-overlay {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       background: #fefdf7;
       min-height: 100vh;
@@ -122,14 +151,21 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       padding: 20px;
       padding-bottom: 90px;
       color: #333;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 999999;
+      overflow-y: auto;
     }
     
-    .focus-blocker {
+    #keep-focus-overlay .focus-blocker {
       width: 100%;
       max-width: 500px;
     }
     
-    .focus-card {
+    #keep-focus-overlay .focus-card {
       background: white;
       border-radius: 16px;
       padding: 40px;
@@ -137,7 +173,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       text-align: center;
     }
     
-    .streak-display {
+    #keep-focus-overlay .streak-display {
       margin-bottom: 24px;
       padding: 12px;
       background: #f5f7fa;
@@ -146,17 +182,17 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       color: #495057;
     }
     
-    .streak-display strong {
+    #keep-focus-overlay .streak-display strong {
       color: #d4b896;
       font-weight: 600;
     }
     
-    .streak-icon {
+    #keep-focus-overlay .streak-icon {
       font-size: 18px;
       margin-right: 4px;
     }
     
-    h2 {
+    #keep-focus-overlay h2 {
       font-size: 28px;
       font-weight: 700;
       margin-bottom: 12px;
@@ -164,14 +200,14 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       letter-spacing: -0.5px;
     }
     
-    .subtitle {
+    #keep-focus-overlay .subtitle {
       font-size: 16px;
       color: #6c757d;
       margin-bottom: 32px;
       line-height: 1.5;
     }
     
-    .reason-input {
+    #keep-focus-overlay .reason-input {
       width: 100%;
       padding: 14px;
       border: 2px solid #e9ecef;
@@ -182,39 +218,39 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       font-family: inherit;
     }
     
-    .reason-input:focus {
+    #keep-focus-overlay .reason-input:focus {
       outline: none;
       border-color: #d4b896;
     }
     
-    .reason-input:disabled {
+    #keep-focus-overlay .reason-input:disabled {
       background: #f5f7fa;
       cursor: not-allowed;
       opacity: 0.7;
     }
     
-    .timer-section {
+    #keep-focus-overlay .timer-section {
       margin-bottom: 24px;
       display: none;
     }
     
-    .timer-section.visible {
+    #keep-focus-overlay .timer-section.visible {
       display: block;
     }
     
-    .timer-display {
+    #keep-focus-overlay .timer-display {
       font-size: 48px;
       font-weight: 700;
       color: #d4b896;
       margin-bottom: 8px;
     }
     
-    .timer-label {
+    #keep-focus-overlay .timer-label {
       font-size: 14px;
       color: #6c757d;
     }
     
-    .submit-reason-btn {
+    #keep-focus-overlay .submit-reason-btn {
       width: 100%;
       padding: 14px 28px;
       background: #d4b896;
@@ -229,27 +265,27 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       margin-bottom: 20px;
     }
     
-    .submit-reason-btn:hover:not(:disabled) {
+    #keep-focus-overlay .submit-reason-btn:hover:not(:disabled) {
       background: #c9a883;
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3);
     }
     
-    .submit-reason-btn:disabled {
+    #keep-focus-overlay .submit-reason-btn:disabled {
       background: #adb5bd;
       cursor: not-allowed;
       opacity: 0.6;
     }
     
-    .submit-reason-btn:active:not(:disabled) {
+    #keep-focus-overlay .submit-reason-btn:active:not(:disabled) {
       transform: translateY(0);
     }
     
-    .submit-reason-btn.hidden {
+    #keep-focus-overlay .submit-reason-btn.hidden {
       display: none;
     }
     
-    .unlock-btn {
+    #keep-focus-overlay .unlock-btn {
       width: 100%;
       padding: 14px 28px;
       background: #d4b896;
@@ -262,48 +298,60 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       transition: all 0.2s;
       font-family: inherit;
       display: none;
+      margin-top: 0;
     }
     
-    .unlock-btn.visible {
+    #keep-focus-overlay .unlock-btn.visible {
       display: block;
     }
     
-    .unlock-btn:hover:not(:disabled) {
+    #keep-focus-overlay .unlock-btn:hover:not(:disabled) {
       background: #c9a883;
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3);
     }
     
-    .unlock-btn:disabled {
+    #keep-focus-overlay .unlock-btn:disabled {
       background: #adb5bd;
       cursor: not-allowed;
       opacity: 0.6;
     }
     
-    .unlock-btn:active:not(:disabled) {
+    #keep-focus-overlay .unlock-btn:active:not(:disabled) {
       transform: translateY(0);
     }
     
-    .quote-section {
+    #keep-focus-overlay .quote-section {
       margin-top: 32px;
       padding-top: 24px;
       border-top: 1px solid #e9ecef;
     }
     
-    .quote {
-      font-size: 14px;
+    #keep-focus-overlay .simplified-view {
+      text-align: center;
+      margin-bottom: 32px;
+      margin-top: 40px;
+    }
+    
+    #keep-focus-overlay .quote {
+      font-size: 20px;
       font-style: italic;
+      color: #495057;
+      line-height: 1.8;
+      margin-bottom: 16px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      font-weight: 400;
+    }
+    
+    #keep-focus-overlay .quote-author {
+      font-size: 14px;
       color: #6c757d;
-      line-height: 1.6;
-      margin-bottom: 8px;
+      font-weight: 500;
     }
     
-    .quote-author {
-      font-size: 12px;
-      color: #adb5bd;
-    }
-    
-    .close-tab-btn {
+    #keep-focus-overlay .close-tab-btn {
       position: fixed;
       bottom: 0;
       left: 0;
@@ -319,29 +367,30 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       cursor: pointer;
       transition: all 0.2s;
       font-family: inherit;
-      z-index: 1000;
+      z-index: 1000000;
       box-shadow: 0 -4px 12px rgba(40, 167, 69, 0.3);
     }
     
-    .close-tab-btn:hover {
+    #keep-focus-overlay .close-tab-btn:hover {
       background: #218838;
       transform: translateY(-2px);
       box-shadow: 0 -6px 16px rgba(40, 167, 69, 0.4);
     }
     
-    .close-tab-btn:active {
+    #keep-focus-overlay .close-tab-btn:active {
       transform: translateY(0);
       box-shadow: 0 -2px 8px rgba(40, 167, 69, 0.3);
     }
   `;
-  document.head.appendChild(style);
+  // Only add style once
+  if (!document.getElementById('keep-focus-styles')) {
+    document.head.appendChild(style);
+  }
   
   // Set document title
   document.title = 'Stay Focused';
   
-  // Create body structure
-  const body = document.body;
-  
+  // Create body structure within overlay
   const focusBlocker = document.createElement('div');
   focusBlocker.className = 'focus-blocker';
   
@@ -404,40 +453,49 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   timerSection.appendChild(timerLabel);
   focusCard.appendChild(timerSection);
   
-  // Add unlock button (hidden initially)
+  // Add simplified view section (hidden initially, shown after reason is submitted)
+  const simplifiedView = document.createElement('div');
+  simplifiedView.id = 'simplifiedView';
+  simplifiedView.className = 'simplified-view';
+  simplifiedView.style.display = 'none';
+  
+  const simplifiedQuote = document.createElement('p');
+  simplifiedQuote.id = 'simplifiedQuote';
+  simplifiedQuote.className = 'quote';
+  
+  const simplifiedQuoteAuthor = document.createElement('p');
+  simplifiedQuoteAuthor.id = 'simplifiedQuoteAuthor';
+  simplifiedQuoteAuthor.className = 'quote-author';
+  
+  simplifiedView.appendChild(simplifiedQuote);
+  simplifiedView.appendChild(simplifiedQuoteAuthor);
+  
+  // Add unlock button before simplified view so quote appears above it
   const unlockBtn = document.createElement('button');
   unlockBtn.id = 'unlockBtn';
   unlockBtn.className = 'unlock-btn';
   unlockBtn.disabled = true;
   unlockBtn.textContent = 'Continue';
+  
+  // Structure: simplified view -> unlock button
+  focusCard.appendChild(simplifiedView);
   focusCard.appendChild(unlockBtn);
   
-  // Add quote section
-  const quoteSection = document.createElement('div');
-  quoteSection.className = 'quote-section';
-  
-  const quote = document.createElement('p');
-  quote.className = 'quote';
-  quote.textContent = '"Every action you take is a vote for the type of person you wish to become."';
-  
-  const quoteAuthor = document.createElement('p');
-  quoteAuthor.className = 'quote-author';
-  quoteAuthor.textContent = '— James Clear, Atomic Habits';
-  
-  quoteSection.appendChild(quote);
-  quoteSection.appendChild(quoteAuthor);
-  focusCard.appendChild(quoteSection);
-  
-  // Assemble structure
+  // Assemble structure within overlay
   focusBlocker.appendChild(focusCard);
-  body.appendChild(focusBlocker);
+  overlay.appendChild(focusBlocker);
   
   // Add sticky close tab button at the bottom
   const closeTabBtn = document.createElement('button');
   closeTabBtn.id = 'closeTabBtn';
   closeTabBtn.className = 'close-tab-btn';
   closeTabBtn.textContent = 'Stay Focused - Close Tab';
-  body.appendChild(closeTabBtn);
+  overlay.appendChild(closeTabBtn);
+  
+  // Append overlay to body (only if not already present)
+  if (!document.getElementById('keep-focus-overlay')) {
+    body.appendChild(overlay);
+  }
   
   // Close tab button handler
   closeTabBtn.addEventListener('click', () => {
@@ -455,9 +513,38 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const TIMER_DURATION = 15; // seconds
   const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
   
+  // Focus and productivity quotes
+  const focusQuotes = [
+    { text: '"The secret of getting ahead is getting started."', author: 'Mark Twain' },
+    { text: '"Concentrate all your thoughts upon the work at hand. The sun\'s rays do not burn until brought to a focus."', author: 'Alexander Graham Bell' },
+    { text: '"Focus is saying no to a thousand things."', author: 'Steve Jobs' },
+    { text: '"The ability to concentrate and to use your time well is everything if you want to succeed in business—or almost anywhere else for that matter."', author: 'Lee Iacocca' },
+    { text: '"What you focus on expands, and when you focus on the goodness in your life, you create more of it."', author: 'Oprah Winfrey' },
+    { text: '"You can\'t depend on your eyes when your imagination is out of focus."', author: 'Mark Twain' },
+    { text: '"The shorter way to do many things is to only do one thing at a time."', author: 'Mozart' },
+    { text: '"The successful warrior is the average man, with laser-like focus."', author: 'Bruce Lee' },
+    { text: '"Where focus goes, energy flows."', author: 'Tony Robbins' },
+    { text: '"The way to get started is to quit talking and begin doing."', author: 'Walt Disney' },
+    { text: '"Your attention is one of your most valuable resources. Guard it like a treasure."', author: 'Unknown' },
+    { text: '"Productivity is never an accident. It is always the result of a commitment to excellence, intelligent planning, and focused effort."', author: 'Paul J. Meyer' },
+    { text: '"The successful person has the habit of doing the things failures don\'t like to do."', author: 'Thomas Edison' },
+    { text: '"Distraction is the enemy of vision."', author: 'Unknown' },
+    { text: '"The more you say no to the things that don\'t matter, the more you can say yes to the things that do."', author: 'Unknown' },
+    { text: '"Focus on being productive instead of busy."', author: 'Tim Ferriss' },
+    { text: '"The ability to focus attention on important things is a defining characteristic of intelligence."', author: 'Robert J. Shiller' },
+    { text: '"Success is the sum of small efforts repeated day in and day out."', author: 'Robert Collier' },
+    { text: '"The most precious resource we all have is time."', author: 'Steve Jobs' },
+    { text: '"Stay focused, go after your dreams and keep moving toward your goals."', author: 'LL Cool J' }
+  ];
+  
   let timeRemaining = TIMER_DURATION;
   let timerInterval;
   let timerStarted = false;
+  
+  // Get random focus quote
+  function getRandomQuote() {
+    return focusQuotes[Math.floor(Math.random() * focusQuotes.length)];
+  }
   
   // Check if submit reason button can be enabled
   function checkSubmitReasonButton() {
@@ -470,15 +557,23 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     if (timerStarted) return;
     timerStarted = true;
     
-    // Show timer section
-    timerSection.classList.add('visible');
+    // Hide initial elements
+    if (currentStreak > 0) {
+      const streakEl = focusCard.querySelector('.streak-display');
+      if (streakEl) streakEl.style.display = 'none';
+    }
+    h2.style.display = 'none';
+    subtitle.style.display = 'none';
+    reasonInput.style.display = 'none';
+    submitReasonBtn.style.display = 'none';
     
-    // Hide submit reason button
-    submitReasonBtn.classList.add('hidden');
+    // Show simplified view with random quote (timer runs in background, not visible)
+    const randomQuote = getRandomQuote();
+    simplifiedQuote.textContent = randomQuote.text;
+    simplifiedQuoteAuthor.textContent = `— ${randomQuote.author}`;
+    simplifiedView.style.display = 'block';
     
-    // Disable reason input
-    reasonInput.disabled = true;
-    
+    // Timer runs in background (not visible)
     timerInterval = setInterval(() => {
       timeRemaining--;
       timerDisplay.textContent = timeRemaining;
