@@ -41,7 +41,12 @@ function renderBlockedList() {
     return;
   }
 
-  list.innerHTML = blockedSites.map((siteObj, index) => {
+  // Sort blocked sites alphabetically by URL
+  const sortedSites = [...blockedSites].sort((a, b) => {
+    return a.url.localeCompare(b.url);
+  });
+
+  list.innerHTML = sortedSites.map((siteObj, index) => {
     const site = siteObj.url;
     const blockChildren = siteObj.blockChildren !== false;
     const modeText = blockChildren ? 'Blocks all subpages' : 'Blocks this page only';
@@ -52,7 +57,7 @@ function renderBlockedList() {
         <span class="site-url-main">${escapeHtml(site)}</span>
         <span class="site-url-mode">${modeText}</span>
       </span>
-      <button class="btn-remove" data-index="${index}">Remove</button>
+      <button class="btn-remove" data-url="${escapeHtml(site)}">Remove</button>
     </li>
   `;
   }).join('');
@@ -60,8 +65,8 @@ function renderBlockedList() {
   // Add event listeners to remove buttons
   document.querySelectorAll('.btn-remove').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const index = parseInt(e.target.dataset.index);
-      removeSite(index);
+      const url = e.target.dataset.url;
+      removeSiteByUrl(url);
     });
   });
 }
@@ -127,6 +132,16 @@ async function removeSite(index) {
   blockedSites.splice(index, 1);
   await saveData();
   renderBlockedList();
+}
+
+// Remove a site from the blocked list by URL
+async function removeSiteByUrl(url) {
+  const index = blockedSites.findIndex(siteObj => siteObj.url === url);
+  if (index !== -1) {
+    blockedSites.splice(index, 1);
+    await saveData();
+    renderBlockedList();
+  }
 }
 
 // Validate URL/domain input
