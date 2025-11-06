@@ -3,36 +3,61 @@
 (async function() {
   'use strict';
 
+  console.log('[Keep Focus] Starting content script...');
+  
   // Get current URL and normalize it
   const currentUrl = window.location.href;
+  console.log('[Keep Focus] Current URL:', currentUrl);
+  
   const normalizedUrl = normalizeUrl(currentUrl);
+  console.log('[Keep Focus] Normalized URL:', normalizedUrl);
   
   // Get blocked sites and unlock status from storage
   const result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil', 'focusStreak']);
   const blockedSites = result.blockedSites || [];
   const unlockedUntil = result.unlockedUntil || {};
   const focusStreak = result.focusStreak || 0;
+  
+  console.log('[Keep Focus] Blocked sites from storage:', blockedSites);
+  console.log('[Keep Focus] Unlocked until:', unlockedUntil);
+  console.log('[Keep Focus] Focus streak:', focusStreak);
 
   // Check if current site is blocked
   const urlParts = normalizedUrl.split('/');
   const currentHostname = urlParts[0];
   const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
   
+  console.log('[Keep Focus] Current hostname:', currentHostname);
+  console.log('[Keep Focus] Current path:', currentPath);
+  
   const isBlocked = blockedSites.some(blockedSite => {
+    console.log('[Keep Focus] Checking against blocked site:', blockedSite);
+    
     const blockedParts = blockedSite.split('/');
     const blockedHostname = blockedParts[0];
     const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
     
-    // Check if hostnames match (domain must match exactly)
-    // Use exact match only - this prevents false positives from substring matches
-    const hostnameMatch = currentHostname === blockedHostname;
+    // Normalize both hostnames for comparison (remove www. prefix)
+    const normalizedCurrentHostname = normalizeHostname(currentHostname);
+    const normalizedBlockedHostname = normalizeHostname(blockedHostname);
+    
+    console.log('[Keep Focus]   Blocked hostname:', blockedHostname, '(normalized:', normalizedBlockedHostname + ')');
+    console.log('[Keep Focus]   Current hostname:', currentHostname, '(normalized:', normalizedCurrentHostname + ')');
+    console.log('[Keep Focus]   Blocked path:', blockedPath);
+    
+    // Check if normalized hostnames match
+    const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
+    
+    console.log('[Keep Focus]   Hostname match:', hostnameMatch, `(${normalizedCurrentHostname} === ${normalizedBlockedHostname})`);
     
     if (!hostnameMatch) {
+      console.log('[Keep Focus]   -> No match, skipping');
       return false; // Different domain, not blocked
     }
     
     // If blocked site has no path (domain-only block), block everything on that domain
     if (!blockedPath) {
+      console.log('[Keep Focus]   -> Domain-only block, MATCHED!');
       return true;
     }
     
@@ -40,26 +65,48 @@
     // Block if current URL matches exactly or starts with the blocked path followed by '/'
     // e.g., "youtube.com/shorts" blocks "youtube.com/shorts" and "youtube.com/shorts/anything"
     // but NOT "youtube.com/shorts-videos" (must be exact match or subpath)
-    return normalizedUrl === blockedSite || 
-           normalizedUrl.startsWith(blockedSite + '/') ||
+    
+    // Normalize blocked site for comparison (remove www. from hostname)
+    const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
+    
+    const pathMatch = normalizedUrl === normalizedBlockedSite || 
+           normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
            currentPath === blockedPath ||
            currentPath.startsWith(blockedPath + '/');
+    
+    console.log('[Keep Focus]   Normalized blocked site:', normalizedBlockedSite);
+    console.log('[Keep Focus]   Path match:', pathMatch);
+    console.log('[Keep Focus]   -> Path-specific block, result:', pathMatch);
+    
+    return pathMatch;
   });
 
+  console.log('[Keep Focus] Final isBlocked result:', isBlocked);
+
   if (!isBlocked) {
+    console.log('[Keep Focus] Site is not blocked, exiting');
     return; // Site is not blocked, do nothing
   }
 
   // Check if site is currently unlocked
   const siteKey = getSiteKey(normalizedUrl, blockedSites);
+  console.log('[Keep Focus] Site key:', siteKey);
+  
   const unlockTimestamp = unlockedUntil[siteKey];
   const now = Date.now();
   const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
+  
+  console.log('[Keep Focus] Unlock timestamp:', unlockTimestamp);
+  console.log('[Keep Focus] Current time:', now);
+  console.log('[Keep Focus] Time remaining:', unlockTimestamp ? (unlockTimestamp - now) : 'N/A');
 
   if (unlockTimestamp && now < unlockTimestamp) {
     // Site is still unlocked, do nothing
+    console.log('[Keep Focus] Site is currently unlocked, exiting');
     return;
   }
+  
+  console.log('[Keep Focus] Site is blocked and not unlocked, showing overlay');
 
   // Site is blocked - show overlay
   // Increment streak if they closed the tab last time instead of unlocking
@@ -81,17 +128,38 @@
   showBlockOverlay(normalizedUrl, siteKey, newStreak);
 })();
 
+// Normalize hostname by removing www. prefix for consistent matching
+function normalizeHostname(hostname) {
+  if (!hostname) return hostname;
+  // Remove www. prefix if present (case-insensitive)
+  const normalized = hostname.toLowerCase().replace(/^www\./, '');
+  console.log('[Keep Focus] normalizeHostname:', hostname, '->', normalized);
+  return normalized;
+}
+
 // Normalize URL for consistent matching
 function normalizeUrl(url) {
   try {
     const urlObj = new URL(url);
-    let normalized = urlObj.hostname + urlObj.pathname;
+    console.log('[Keep Focus] normalizeUrl - Parsed URL object:', {
+      hostname: urlObj.hostname,
+      pathname: urlObj.pathname,
+      href: urlObj.href
+    });
+    
+    // Normalize hostname (remove www. prefix)
+    const normalizedHostname = normalizeHostname(urlObj.hostname);
+    let normalized = normalizedHostname + urlObj.pathname;
     // Remove trailing slash
     normalized = normalized.replace(/\/$/, '');
     // Convert to lowercase for case-insensitive matching
-    return normalized.toLowerCase();
+    const result = normalized.toLowerCase();
+    
+    console.log('[Keep Focus] normalizeUrl - Result:', result);
+    return result;
   } catch (e) {
     // If URL parsing fails, try to lowercase the input
+    console.log('[Keep Focus] normalizeUrl - Error parsing URL:', e, 'Using fallback');
     return url.toLowerCase();
   }
 }
@@ -103,14 +171,19 @@ function getSiteKey(normalizedUrl, blockedSites) {
   const currentHostname = urlParts[0];
   const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
   
+  // Normalize current hostname (should already be normalized, but just in case)
+  const normalizedCurrentHostname = normalizeHostname(currentHostname);
+  
   for (const blockedSite of blockedSites) {
     const blockedParts = blockedSite.split('/');
     const blockedHostname = blockedParts[0];
     const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
     
-    // Check if hostnames match (domain must match exactly)
-    // Use exact match only - this prevents false positives from substring matches
-    const hostnameMatch = currentHostname === blockedHostname;
+    // Normalize both hostnames for comparison (remove www. prefix)
+    const normalizedBlockedHostname = normalizeHostname(blockedHostname);
+    
+    // Check if normalized hostnames match
+    const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
     
     if (!hostnameMatch) {
       continue; // Different domain, skip
@@ -123,14 +196,17 @@ function getSiteKey(normalizedUrl, blockedSites) {
     
     // If blocked site has a path (path-specific block), only match if current URL matches that path
     // Match if current URL matches exactly or starts with the blocked path followed by '/'
-    if (normalizedUrl === blockedSite || 
-        normalizedUrl.startsWith(blockedSite + '/') ||
+    // Normalize blocked site for comparison
+    const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
+    
+    if (normalizedUrl === normalizedBlockedSite || 
+        normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
         currentPath === blockedPath ||
         currentPath.startsWith(blockedPath + '/')) {
       return blockedSite;
     }
   }
-  return currentHostname; // Return domain as fallback
+  return normalizedCurrentHostname; // Return normalized domain as fallback
 }
 
 // Show the blocking overlay
