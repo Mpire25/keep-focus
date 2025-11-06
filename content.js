@@ -316,13 +316,57 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   overlay = document.createElement('div');
   overlay.id = 'keep-focus-overlay';
   
+  // Apply inline styles directly to overlay element to prevent inheritance
+  overlay.style.cssText = `
+    all: unset !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+    font-size: 16px !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    line-height: normal !important;
+    letter-spacing: normal !important;
+    text-align: initial !important;
+    text-decoration: none !important;
+    text-transform: none !important;
+    text-indent: 0 !important;
+    text-shadow: none !important;
+    color: #333 !important;
+    background: #fefdf7 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    padding-bottom: 90px !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 999999 !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    direction: ltr !important;
+    unicode-bidi: normal !important;
+    writing-mode: horizontal-tb !important;
+  `;
+  
   // Create and inject styles
   const style = document.createElement('style');
   style.id = 'keep-focus-styles';
   style.textContent = `
     /* Reset all inherited styles on the overlay root */
     #keep-focus-overlay {
-      all: initial;
+      all: unset !important;
       /* Explicitly set all needed properties with !important to override page styles */
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
       font-size: 16px !important;
@@ -333,6 +377,8 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       text-align: initial !important;
       text-decoration: none !important;
       text-transform: none !important;
+      text-indent: 0 !important;
+      text-shadow: none !important;
       color: #333 !important;
       background: #fefdf7 !important;
       border: none !important;
@@ -347,242 +393,283 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       width: 100% !important;
       height: 100% !important;
       z-index: 999999 !important;
       overflow-y: auto !important;
       box-sizing: border-box !important;
       margin: 0 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      direction: ltr !important;
+      unicode-bidi: normal !important;
+      writing-mode: horizontal-tb !important;
     }
     
-    /* Reset common properties for all child elements */
-    #keep-focus-overlay * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    /* Reset inherited properties for all child elements - prevent inheritance from page */
+    #keep-focus-overlay *,
+    #keep-focus-overlay *::before,
+    #keep-focus-overlay *::after {
+      box-sizing: border-box !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      font-family: inherit !important;
+      font-size: inherit !important;
+      font-weight: inherit !important;
+      font-style: inherit !important;
+      line-height: inherit !important;
+      color: inherit !important;
+      text-align: inherit !important;
+      text-decoration: inherit !important;
+      text-transform: inherit !important;
+      text-indent: 0 !important;
+      text-shadow: none !important;
+      letter-spacing: inherit !important;
+      direction: inherit !important;
+      unicode-bidi: inherit !important;
+      writing-mode: inherit !important;
     }
     
     #keep-focus-overlay .focus-blocker {
-      width: 100%;
-      max-width: 500px;
+      width: 100% !important;
+      max-width: 500px !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .focus-card {
-      background: white;
-      border-radius: 16px;
-      padding: 40px;
-      box-shadow: 0 20px 60px rgba(212, 184, 150, 0.15);
-      text-align: center;
+      background: white !important;
+      border-radius: 16px !important;
+      padding: 40px !important;
+      box-shadow: 0 20px 60px rgba(212, 184, 150, 0.15) !important;
+      text-align: center !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .streak-display {
-      margin-bottom: 24px;
-      padding: 12px;
-      background: #f5f7fa;
-      border-radius: 8px;
-      font-size: 14px;
-      color: #495057;
+      margin-bottom: 24px !important;
+      padding: 12px !important;
+      background: #f5f7fa !important;
+      border-radius: 8px !important;
+      font-size: 14px !important;
+      color: #495057 !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .streak-display strong {
-      color: #d4b896;
-      font-weight: 600;
+      color: #d4b896 !important;
+      font-weight: 600 !important;
     }
     
     #keep-focus-overlay .streak-icon {
-      font-size: 18px;
-      margin-right: 4px;
+      font-size: 18px !important;
+      margin-right: 4px !important;
+      display: inline !important;
     }
     
     #keep-focus-overlay h2 {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: #212529;
-      letter-spacing: -0.5px;
+      font-size: 28px !important;
+      font-weight: 700 !important;
+      margin-bottom: 12px !important;
+      color: #212529 !important;
+      letter-spacing: -0.5px !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .subtitle {
-      font-size: 16px;
-      color: #6c757d;
-      margin-bottom: 32px;
-      line-height: 1.5;
+      font-size: 16px !important;
+      color: #6c757d !important;
+      margin-bottom: 32px !important;
+      line-height: 1.5 !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .reason-input {
-      width: 100%;
-      padding: 14px;
-      border: 2px solid #e9ecef;
-      border-radius: 8px;
-      font-size: 14px;
-      margin-bottom: 20px;
-      transition: border-color 0.2s;
-      font-family: inherit;
+      width: 100% !important;
+      padding: 14px !important;
+      border: 2px solid #e9ecef !important;
+      border-radius: 8px !important;
+      font-size: 14px !important;
+      margin-bottom: 20px !important;
+      transition: border-color 0.2s !important;
+      font-family: inherit !important;
+      display: block !important;
+      background: white !important;
     }
     
     #keep-focus-overlay .reason-input:focus {
-      outline: none;
-      border-color: #d4b896;
+      outline: none !important;
+      border-color: #d4b896 !important;
     }
     
     #keep-focus-overlay .reason-input:disabled {
-      background: #f5f7fa;
-      cursor: not-allowed;
-      opacity: 0.7;
+      background: #f5f7fa !important;
+      cursor: not-allowed !important;
+      opacity: 0.7 !important;
     }
     
     #keep-focus-overlay .timer-section {
-      margin-bottom: 24px;
-      display: none;
+      margin-bottom: 24px !important;
+      display: none !important;
     }
     
     #keep-focus-overlay .timer-section.visible {
-      display: block;
+      display: block !important;
     }
     
     #keep-focus-overlay .timer-display {
-      font-size: 48px;
-      font-weight: 700;
-      color: #d4b896;
-      margin-bottom: 8px;
+      font-size: 48px !important;
+      font-weight: 700 !important;
+      color: #d4b896 !important;
+      margin-bottom: 8px !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .timer-label {
-      font-size: 14px;
-      color: #6c757d;
+      font-size: 14px !important;
+      color: #6c757d !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .submit-reason-btn {
-      width: 100%;
-      padding: 14px 28px;
-      background: #d4b896;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
-      margin-bottom: 20px;
+      width: 100% !important;
+      padding: 14px 28px !important;
+      background: #d4b896 !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 8px !important;
+      font-size: 16px !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: all 0.2s !important;
+      font-family: inherit !important;
+      margin-bottom: 20px !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .submit-reason-btn:hover:not(:disabled) {
-      background: #c9a883;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3);
+      background: #c9a883 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3) !important;
     }
     
     #keep-focus-overlay .submit-reason-btn:disabled {
-      background: #adb5bd;
-      cursor: not-allowed;
-      opacity: 0.6;
+      background: #adb5bd !important;
+      cursor: not-allowed !important;
+      opacity: 0.6 !important;
     }
     
     #keep-focus-overlay .submit-reason-btn:active:not(:disabled) {
-      transform: translateY(0);
+      transform: translateY(0) !important;
     }
     
     #keep-focus-overlay .submit-reason-btn.hidden {
-      display: none;
+      display: none !important;
     }
     
     #keep-focus-overlay .unlock-btn {
-      width: 100%;
-      padding: 14px 28px;
-      background: #d4b896;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
-      display: none;
-      margin-top: 0;
+      width: 100% !important;
+      padding: 14px 28px !important;
+      background: #d4b896 !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 8px !important;
+      font-size: 16px !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: all 0.2s !important;
+      font-family: inherit !important;
+      display: none !important;
+      margin-top: 0 !important;
     }
     
     #keep-focus-overlay .unlock-btn.visible {
-      display: block;
+      display: block !important;
     }
     
     #keep-focus-overlay .unlock-btn:hover:not(:disabled) {
-      background: #c9a883;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3);
+      background: #c9a883 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3) !important;
     }
     
     #keep-focus-overlay .unlock-btn:disabled {
-      background: #adb5bd;
-      cursor: not-allowed;
-      opacity: 0.6;
+      background: #adb5bd !important;
+      cursor: not-allowed !important;
+      opacity: 0.6 !important;
     }
     
     #keep-focus-overlay .unlock-btn:active:not(:disabled) {
-      transform: translateY(0);
+      transform: translateY(0) !important;
     }
     
     #keep-focus-overlay .quote-section {
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1px solid #e9ecef;
+      margin-top: 32px !important;
+      padding-top: 24px !important;
+      border-top: 1px solid #e9ecef !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .simplified-view {
-      text-align: center;
-      margin-bottom: 32px;
-      margin-top: 40px;
+      text-align: center !important;
+      margin-bottom: 32px !important;
+      margin-top: 40px !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .quote {
-      font-size: 20px;
-      font-style: italic;
-      color: #495057;
-      line-height: 1.8;
-      margin-bottom: 16px;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-      font-weight: 400;
+      font-size: 20px !important;
+      font-style: italic !important;
+      color: #495057 !important;
+      line-height: 1.8 !important;
+      margin-bottom: 16px !important;
+      max-width: 600px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      font-weight: 400 !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .quote-author {
-      font-size: 14px;
-      color: #6c757d;
-      font-weight: 500;
+      font-size: 14px !important;
+      color: #6c757d !important;
+      font-weight: 500 !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .close-tab-btn {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-      padding: 18px 28px;
-      background: #28a745;
-      color: white;
-      border: none;
-      border-radius: 0;
-      font-size: 18px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
-      z-index: 1000000;
-      box-shadow: 0 -4px 12px rgba(40, 167, 69, 0.3);
-      text-align: center;
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      padding: 18px 28px !important;
+      background: #28a745 !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 0 !important;
+      font-size: 18px !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: all 0.2s !important;
+      font-family: inherit !important;
+      z-index: 1000000 !important;
+      box-shadow: 0 -4px 12px rgba(40, 167, 69, 0.3) !important;
+      text-align: center !important;
+      display: block !important;
     }
     
     #keep-focus-overlay .close-tab-btn:hover {
-      background: #218838;
-      transform: translateY(-2px);
-      box-shadow: 0 -6px 16px rgba(40, 167, 69, 0.4);
+      background: #218838 !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 -6px 16px rgba(40, 167, 69, 0.4) !important;
     }
     
     #keep-focus-overlay .close-tab-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 -2px 8px rgba(40, 167, 69, 0.3);
+      transform: translateY(0) !important;
+      box-shadow: 0 -2px 8px rgba(40, 167, 69, 0.3) !important;
     }
   `;
   // Only add style once
