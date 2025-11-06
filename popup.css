@@ -39,12 +39,11 @@ header h1 {
   font-size: 13px;
   opacity: 0.9;
   font-weight: 400;
+  margin-bottom: 12px;
 }
 
 .streak-section {
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  margin-top: 12px;
 }
 
 .streak-badge {
@@ -52,10 +51,10 @@ header h1 {
   align-items: center;
   gap: 8px;
   justify-content: center;
-  padding: 12px;
-  background: white;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.7);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .streak-icon {
