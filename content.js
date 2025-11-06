@@ -1,9 +1,10 @@
 // Content script that runs on all pages to block sites
 
-(async function() {
+// Main function to check and block sites
+async function checkAndBlockSite() {
   'use strict';
 
-  console.log('[Keep Focus] Starting content script...');
+  console.log('[Keep Focus] Checking site...');
   
   // Get current URL and normalize it
   const currentUrl = window.location.href;
@@ -85,6 +86,19 @@
 
   if (!isBlocked) {
     console.log('[Keep Focus] Site is not blocked, exiting');
+    // Remove overlay if it exists (in case URL changed from blocked to unblocked)
+    const existingOverlay = document.getElementById('keep-focus-overlay');
+    if (existingOverlay) {
+      console.log('[Keep Focus] Removing overlay (site no longer blocked)');
+      existingOverlay.remove();
+      // Restore body content
+      Array.from(document.body.children).forEach(child => {
+        if (child.id !== 'keep-focus-overlay') {
+          child.style.display = '';
+        }
+      });
+      document.body.style.overflow = '';
+    }
     return; // Site is not blocked, do nothing
   }
 
@@ -103,10 +117,30 @@
   if (unlockTimestamp && now < unlockTimestamp) {
     // Site is still unlocked, do nothing
     console.log('[Keep Focus] Site is currently unlocked, exiting');
+    // Remove overlay if it exists (in case URL changed and site is now unlocked)
+    const existingOverlay = document.getElementById('keep-focus-overlay');
+    if (existingOverlay) {
+      console.log('[Keep Focus] Removing overlay (site is unlocked)');
+      existingOverlay.remove();
+      // Restore body content
+      Array.from(document.body.children).forEach(child => {
+        if (child.id !== 'keep-focus-overlay') {
+          child.style.display = '';
+        }
+      });
+      document.body.style.overflow = '';
+    }
     return;
   }
   
   console.log('[Keep Focus] Site is blocked and not unlocked, showing overlay');
+
+  // Check if overlay already exists (don't show duplicate)
+  const existingOverlay = document.getElementById('keep-focus-overlay');
+  if (existingOverlay) {
+    console.log('[Keep Focus] Overlay already exists, skipping');
+    return;
+  }
 
   // Site is blocked - show overlay
   // Increment streak if they closed the tab last time instead of unlocking
@@ -126,6 +160,76 @@
   }
   
   showBlockOverlay(normalizedUrl, siteKey, newStreak);
+}
+
+// Set up URL change detection for SPAs
+function setupUrlChangeDetection() {
+  // Prevent duplicate setup
+  if (window._keepFocusUrlDetectionSetup) {
+    console.log('[Keep Focus] URL change detection already set up, skipping');
+    return;
+  }
+  window._keepFocusUrlDetectionSetup = true;
+  
+  console.log('[Keep Focus] Setting up URL change detection...');
+  
+  let lastUrl = window.location.href;
+  
+  // Check URL periodically (for SPAs that don't trigger events)
+  const urlCheckInterval = setInterval(() => {
+    const currentUrl = window.location.href;
+    if (currentUrl !== lastUrl) {
+      console.log('[Keep Focus] URL changed (detected via interval):', lastUrl, '->', currentUrl);
+      lastUrl = currentUrl;
+      checkAndBlockSite();
+    }
+  }, 500); // Check every 500ms
+  
+  // Listen for popstate (back/forward button)
+  window.addEventListener('popstate', () => {
+    console.log('[Keep Focus] URL changed (popstate event)');
+    lastUrl = window.location.href;
+    checkAndBlockSite();
+  });
+  
+  // Intercept pushState and replaceState for SPA navigation
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+  
+  history.pushState = function(...args) {
+    originalPushState.apply(history, args);
+    console.log('[Keep Focus] URL changed (pushState)');
+    lastUrl = window.location.href;
+    // Use setTimeout to allow the page to update
+    setTimeout(() => checkAndBlockSite(), 100);
+  };
+  
+  history.replaceState = function(...args) {
+    originalReplaceState.apply(history, args);
+    console.log('[Keep Focus] URL changed (replaceState)');
+    lastUrl = window.location.href;
+    // Use setTimeout to allow the page to update
+    setTimeout(() => checkAndBlockSite(), 100);
+  };
+  
+  // Also listen for hash changes
+  window.addEventListener('hashchange', () => {
+    console.log('[Keep Focus] URL changed (hashchange event)');
+    lastUrl = window.location.href;
+    checkAndBlockSite();
+  });
+}
+
+// Initialize on page load
+(async function() {
+  'use strict';
+  console.log('[Keep Focus] Starting content script...');
+  
+  // Run initial check
+  await checkAndBlockSite();
+  
+  // Set up URL change detection
+  setupUrlChangeDetection();
 })();
 
 // Normalize hostname by removing www. prefix for consistent matching
