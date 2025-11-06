@@ -110,6 +110,18 @@ header h1 {
   border-color: #d4b896;
 }
 
+#siteInput.error {
+  border-color: #dc3545;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
 .btn-primary {
   padding: 10px 20px;
   background: #d4b896;
