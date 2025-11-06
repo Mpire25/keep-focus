@@ -92,7 +92,7 @@ header h1 {
 .input-group {
   display: flex;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 }
 
@@ -120,6 +120,28 @@ header h1 {
   margin-top: 6px;
   margin-bottom: 8px;
   padding: 0 2px;
+}
+
+.block-option {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6c757d;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+  accent-color: #d4b896;
 }
 
 .btn-primary {
@@ -170,6 +192,19 @@ header h1 {
   font-size: 14px;
   color: #495057;
   word-break: break-all;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.site-url-main {
+  font-weight: 500;
+}
+
+.site-url-mode {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
 }
 
 .btn-remove {

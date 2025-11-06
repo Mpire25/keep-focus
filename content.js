@@ -20,7 +20,10 @@ async function checkAndBlockSite() {
   const currentHostname = urlParts[0];
   const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
   
-  const isBlocked = blockedSites.some(blockedSite => {
+  const isBlocked = blockedSites.some(blockedSiteObj => {
+    const blockedSite = blockedSiteObj.url;
+    const blockChildren = blockedSiteObj.blockChildren !== false; // Default to true if undefined
+    
     const blockedParts = blockedSite.split('/');
     const blockedHostname = blockedParts[0];
     const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
@@ -36,24 +39,37 @@ async function checkAndBlockSite() {
       return false; // Different domain, not blocked
     }
     
-    // If blocked site has no path (domain-only block), block everything on that domain
+    // If blocked site has no path (domain-only block)
     if (!blockedPath) {
-      return true;
+      // If blockChildren is true, block everything on that domain
+      // If blockChildren is false, only block the exact domain (no subpages)
+      if (blockChildren) {
+        return true;
+      } else {
+        // Only block if current URL has no path (exact domain match)
+        const isExactDomain = !currentPath || currentPath === '';
+        return isExactDomain;
+      }
     }
-    
-    // If blocked site has a path (path-specific block), only block if current URL matches that path
-    // Block if current URL matches exactly or starts with the blocked path followed by '/'
-    // e.g., "youtube.com/shorts" blocks "youtube.com/shorts" and "youtube.com/shorts/anything"
-    // but NOT "youtube.com/shorts-videos" (must be exact match or subpath)
     
     // Normalize blocked site for comparison (remove www. from hostname)
     const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
     
-    const pathMatch = normalizedUrl === normalizedBlockedSite || 
-           normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
-           currentPath === blockedPath ||
-           currentPath.startsWith(blockedPath + '/');
-    
+    // If blockChildren is true, block exact match and all subpaths
+    // If blockChildren is false, only block exact match
+    let pathMatch = false;
+    if (blockChildren) {
+      // Block if current URL matches exactly or starts with the blocked path followed by '/'
+      // e.g., "youtube.com/shorts" blocks "youtube.com/shorts" and "youtube.com/shorts/anything"
+      pathMatch = normalizedUrl === normalizedBlockedSite || 
+             normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
+             currentPath === blockedPath ||
+             currentPath.startsWith(blockedPath + '/');
+    } else {
+      // Only block exact match (no subpaths)
+      // e.g., "youtube.com/shorts" only blocks "youtube.com/shorts", NOT "youtube.com/shorts/1"
+      pathMatch = normalizedUrl === normalizedBlockedSite || currentPath === blockedPath;
+    }
     return pathMatch;
   });
 
@@ -222,7 +238,10 @@ function getSiteKey(normalizedUrl, blockedSites) {
   // Normalize current hostname (should already be normalized, but just in case)
   const normalizedCurrentHostname = normalizeHostname(currentHostname);
   
-  for (const blockedSite of blockedSites) {
+  for (const blockedSiteObj of blockedSites) {
+    const blockedSite = blockedSiteObj.url;
+    const blockChildren = blockedSiteObj.blockChildren !== false; // Default to true if undefined
+    
     const blockedParts = blockedSite.split('/');
     const blockedHostname = blockedParts[0];
     const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
@@ -242,16 +261,23 @@ function getSiteKey(normalizedUrl, blockedSites) {
       return blockedSite;
     }
     
-    // If blocked site has a path (path-specific block), only match if current URL matches that path
-    // Match if current URL matches exactly or starts with the blocked path followed by '/'
     // Normalize blocked site for comparison
     const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
     
-    if (normalizedUrl === normalizedBlockedSite || 
-        normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
-        currentPath === blockedPath ||
-        currentPath.startsWith(blockedPath + '/')) {
-      return blockedSite;
+    // If blockChildren is true, match exact and subpaths
+    // If blockChildren is false, only match exact
+    if (blockChildren) {
+      if (normalizedUrl === normalizedBlockedSite || 
+          normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
+          currentPath === blockedPath ||
+          currentPath.startsWith(blockedPath + '/')) {
+        return blockedSite;
+      }
+    } else {
+      // Only exact match
+      if (normalizedUrl === normalizedBlockedSite || currentPath === blockedPath) {
+        return blockedSite;
+      }
     }
   }
   return normalizedCurrentHostname; // Return normalized domain as fallback

@@ -41,12 +41,21 @@ function renderBlockedList() {
     return;
   }
 
-  list.innerHTML = blockedSites.map((site, index) => `
+  list.innerHTML = blockedSites.map((siteObj, index) => {
+    const site = siteObj.url;
+    const blockChildren = siteObj.blockChildren !== false;
+    const modeText = blockChildren ? 'Blocks all subpages' : 'Blocks this page only';
+    
+    return `
     <li class="blocked-item">
-      <span class="site-url">${escapeHtml(site)}</span>
+      <span class="site-url">
+        <span class="site-url-main">${escapeHtml(site)}</span>
+        <span class="site-url-mode">${modeText}</span>
+      </span>
       <button class="btn-remove" data-index="${index}">Remove</button>
     </li>
-  `).join('');
+  `;
+  }).join('');
 
   // Add event listeners to remove buttons
   document.querySelectorAll('.btn-remove').forEach(btn => {
@@ -74,6 +83,8 @@ function updateStreakDisplay() {
 async function addSite() {
   const input = document.getElementById('siteInput');
   const site = input.value.trim();
+  const blockChildrenCheckbox = document.getElementById('blockChildrenCheckbox');
+  const blockChildren = blockChildrenCheckbox.checked;
 
   if (!site) {
     return;
@@ -89,13 +100,22 @@ async function addSite() {
   // Normalize the URL (remove protocol, www, trailing slashes, etc.)
   const normalizedSite = normalizeUrl(site);
   
-  if (blockedSites.includes(normalizedSite)) {
+  // Check if site already exists
+  const siteExists = blockedSites.some(siteObj => siteObj.url === normalizedSite);
+  
+  if (siteExists) {
     showError('This site is already in your blocked list.');
     input.value = '';
     return;
   }
 
-  blockedSites.push(normalizedSite);
+  // Add as object with url and blockChildren properties
+  const newSite = {
+    url: normalizedSite,
+    blockChildren: blockChildren
+  };
+  blockedSites.push(newSite);
+  
   input.value = '';
   clearError();
   await saveData();
