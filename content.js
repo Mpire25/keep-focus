@@ -320,29 +320,46 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const style = document.createElement('style');
   style.id = 'keep-focus-styles';
   style.textContent = `
+    /* Reset all inherited styles on the overlay root */
+    #keep-focus-overlay {
+      all: initial;
+      /* Explicitly set all needed properties with !important to override page styles */
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+      font-size: 16px !important;
+      font-weight: normal !important;
+      font-style: normal !important;
+      line-height: normal !important;
+      letter-spacing: normal !important;
+      text-align: initial !important;
+      text-decoration: none !important;
+      text-transform: none !important;
+      color: #333 !important;
+      background: #fefdf7 !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      min-height: 100vh !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      padding-bottom: 90px !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 999999 !important;
+      overflow-y: auto !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
+    }
+    
+    /* Reset common properties for all child elements */
     #keep-focus-overlay * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-    }
-    
-    #keep-focus-overlay {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: #fefdf7;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      padding-bottom: 90px;
-      color: #333;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 999999;
-      overflow-y: auto;
     }
     
     #keep-focus-overlay .focus-blocker {
@@ -554,6 +571,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       font-family: inherit;
       z-index: 1000000;
       box-shadow: 0 -4px 12px rgba(40, 167, 69, 0.3);
+      text-align: center;
     }
     
     #keep-focus-overlay .close-tab-btn:hover {
