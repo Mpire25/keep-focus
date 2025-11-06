@@ -12,7 +12,7 @@ async function loadData() {
     renderBlockedList();
     updateStreakDisplay();
   } catch (error) {
-    console.error('Error loading data:', error);
+    // Error loading data
   }
 }
 
@@ -24,7 +24,7 @@ async function saveData() {
       focusStreak: focusStreak
     });
   } catch (error) {
-    console.error('Error saving data:', error);
+    // Error saving data
   }
 }
 

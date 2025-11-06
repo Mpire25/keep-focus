@@ -3,37 +3,24 @@
 // Main function to check and block sites
 async function checkAndBlockSite() {
   'use strict';
-
-  console.log('[Keep Focus] Checking site...');
   
   // Get current URL and normalize it
   const currentUrl = window.location.href;
-  console.log('[Keep Focus] Current URL:', currentUrl);
   
   const normalizedUrl = normalizeUrl(currentUrl);
-  console.log('[Keep Focus] Normalized URL:', normalizedUrl);
   
   // Get blocked sites and unlock status from storage
   const result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil', 'focusStreak']);
   const blockedSites = result.blockedSites || [];
   const unlockedUntil = result.unlockedUntil || {};
   const focusStreak = result.focusStreak || 0;
-  
-  console.log('[Keep Focus] Blocked sites from storage:', blockedSites);
-  console.log('[Keep Focus] Unlocked until:', unlockedUntil);
-  console.log('[Keep Focus] Focus streak:', focusStreak);
 
   // Check if current site is blocked
   const urlParts = normalizedUrl.split('/');
   const currentHostname = urlParts[0];
   const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
   
-  console.log('[Keep Focus] Current hostname:', currentHostname);
-  console.log('[Keep Focus] Current path:', currentPath);
-  
   const isBlocked = blockedSites.some(blockedSite => {
-    console.log('[Keep Focus] Checking against blocked site:', blockedSite);
-    
     const blockedParts = blockedSite.split('/');
     const blockedHostname = blockedParts[0];
     const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
@@ -42,23 +29,15 @@ async function checkAndBlockSite() {
     const normalizedCurrentHostname = normalizeHostname(currentHostname);
     const normalizedBlockedHostname = normalizeHostname(blockedHostname);
     
-    console.log('[Keep Focus]   Blocked hostname:', blockedHostname, '(normalized:', normalizedBlockedHostname + ')');
-    console.log('[Keep Focus]   Current hostname:', currentHostname, '(normalized:', normalizedCurrentHostname + ')');
-    console.log('[Keep Focus]   Blocked path:', blockedPath);
-    
     // Check if normalized hostnames match
     const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
     
-    console.log('[Keep Focus]   Hostname match:', hostnameMatch, `(${normalizedCurrentHostname} === ${normalizedBlockedHostname})`);
-    
     if (!hostnameMatch) {
-      console.log('[Keep Focus]   -> No match, skipping');
       return false; // Different domain, not blocked
     }
     
     // If blocked site has no path (domain-only block), block everything on that domain
     if (!blockedPath) {
-      console.log('[Keep Focus]   -> Domain-only block, MATCHED!');
       return true;
     }
     
@@ -75,21 +54,13 @@ async function checkAndBlockSite() {
            currentPath === blockedPath ||
            currentPath.startsWith(blockedPath + '/');
     
-    console.log('[Keep Focus]   Normalized blocked site:', normalizedBlockedSite);
-    console.log('[Keep Focus]   Path match:', pathMatch);
-    console.log('[Keep Focus]   -> Path-specific block, result:', pathMatch);
-    
     return pathMatch;
   });
 
-  console.log('[Keep Focus] Final isBlocked result:', isBlocked);
-
   if (!isBlocked) {
-    console.log('[Keep Focus] Site is not blocked, exiting');
     // Remove overlay if it exists (in case URL changed from blocked to unblocked)
     const existingOverlay = document.getElementById('keep-focus-overlay');
     if (existingOverlay) {
-      console.log('[Keep Focus] Removing overlay (site no longer blocked)');
       existingOverlay.remove();
       // Restore body content
       Array.from(document.body.children).forEach(child => {
@@ -104,23 +75,16 @@ async function checkAndBlockSite() {
 
   // Check if site is currently unlocked
   const siteKey = getSiteKey(normalizedUrl, blockedSites);
-  console.log('[Keep Focus] Site key:', siteKey);
   
   const unlockTimestamp = unlockedUntil[siteKey];
   const now = Date.now();
   const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
-  
-  console.log('[Keep Focus] Unlock timestamp:', unlockTimestamp);
-  console.log('[Keep Focus] Current time:', now);
-  console.log('[Keep Focus] Time remaining:', unlockTimestamp ? (unlockTimestamp - now) : 'N/A');
 
   if (unlockTimestamp && now < unlockTimestamp) {
     // Site is still unlocked, do nothing
-    console.log('[Keep Focus] Site is currently unlocked, exiting');
     // Remove overlay if it exists (in case URL changed and site is now unlocked)
     const existingOverlay = document.getElementById('keep-focus-overlay');
     if (existingOverlay) {
-      console.log('[Keep Focus] Removing overlay (site is unlocked)');
       existingOverlay.remove();
       // Restore body content
       Array.from(document.body.children).forEach(child => {
@@ -132,13 +96,10 @@ async function checkAndBlockSite() {
     }
     return;
   }
-  
-  console.log('[Keep Focus] Site is blocked and not unlocked, showing overlay');
 
   // Check if overlay already exists (don't show duplicate)
   const existingOverlay = document.getElementById('keep-focus-overlay');
   if (existingOverlay) {
-    console.log('[Keep Focus] Overlay already exists, skipping');
     return;
   }
 
@@ -166,12 +127,9 @@ async function checkAndBlockSite() {
 function setupUrlChangeDetection() {
   // Prevent duplicate setup
   if (window._keepFocusUrlDetectionSetup) {
-    console.log('[Keep Focus] URL change detection already set up, skipping');
     return;
   }
   window._keepFocusUrlDetectionSetup = true;
-  
-  console.log('[Keep Focus] Setting up URL change detection...');
   
   let lastUrl = window.location.href;
   
@@ -179,7 +137,6 @@ function setupUrlChangeDetection() {
   const urlCheckInterval = setInterval(() => {
     const currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
-      console.log('[Keep Focus] URL changed (detected via interval):', lastUrl, '->', currentUrl);
       lastUrl = currentUrl;
       checkAndBlockSite();
     }
@@ -187,7 +144,6 @@ function setupUrlChangeDetection() {
   
   // Listen for popstate (back/forward button)
   window.addEventListener('popstate', () => {
-    console.log('[Keep Focus] URL changed (popstate event)');
     lastUrl = window.location.href;
     checkAndBlockSite();
   });
@@ -198,7 +154,6 @@ function setupUrlChangeDetection() {
   
   history.pushState = function(...args) {
     originalPushState.apply(history, args);
-    console.log('[Keep Focus] URL changed (pushState)');
     lastUrl = window.location.href;
     // Use setTimeout to allow the page to update
     setTimeout(() => checkAndBlockSite(), 100);
@@ -206,7 +161,6 @@ function setupUrlChangeDetection() {
   
   history.replaceState = function(...args) {
     originalReplaceState.apply(history, args);
-    console.log('[Keep Focus] URL changed (replaceState)');
     lastUrl = window.location.href;
     // Use setTimeout to allow the page to update
     setTimeout(() => checkAndBlockSite(), 100);
@@ -214,7 +168,6 @@ function setupUrlChangeDetection() {
   
   // Also listen for hash changes
   window.addEventListener('hashchange', () => {
-    console.log('[Keep Focus] URL changed (hashchange event)');
     lastUrl = window.location.href;
     checkAndBlockSite();
   });
@@ -223,7 +176,6 @@ function setupUrlChangeDetection() {
 // Initialize on page load
 (async function() {
   'use strict';
-  console.log('[Keep Focus] Starting content script...');
   
   // Run initial check
   await checkAndBlockSite();
@@ -237,7 +189,6 @@ function normalizeHostname(hostname) {
   if (!hostname) return hostname;
   // Remove www. prefix if present (case-insensitive)
   const normalized = hostname.toLowerCase().replace(/^www\./, '');
-  console.log('[Keep Focus] normalizeHostname:', hostname, '->', normalized);
   return normalized;
 }
 
@@ -245,11 +196,6 @@ function normalizeHostname(hostname) {
 function normalizeUrl(url) {
   try {
     const urlObj = new URL(url);
-    console.log('[Keep Focus] normalizeUrl - Parsed URL object:', {
-      hostname: urlObj.hostname,
-      pathname: urlObj.pathname,
-      href: urlObj.href
-    });
     
     // Normalize hostname (remove www. prefix)
     const normalizedHostname = normalizeHostname(urlObj.hostname);
@@ -259,11 +205,9 @@ function normalizeUrl(url) {
     // Convert to lowercase for case-insensitive matching
     const result = normalized.toLowerCase();
     
-    console.log('[Keep Focus] normalizeUrl - Result:', result);
     return result;
   } catch (e) {
     // If URL parsing fails, try to lowercase the input
-    console.log('[Keep Focus] normalizeUrl - Error parsing URL:', e, 'Using fallback');
     return url.toLowerCase();
   }
 }
@@ -841,7 +785,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         // Reload the page
         window.location.reload();
       } catch (error) {
-        console.error('Error unlocking site:', error);
+        // Error unlocking site
       }
     }
   });
