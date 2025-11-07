@@ -168,6 +168,36 @@ async function removeSiteByUrl(url) {
   const index = blockedSites.findIndex(siteObj => siteObj.url === url);
   if (index !== -1) {
     blockedSites.splice(index, 1);
+    
+    // Also remove from unlockedUntil if it exists
+    try {
+      const result = await chrome.storage.sync.get(['unlockedUntil']);
+      const unlockedUntil = result.unlockedUntil || {};
+      let updated = false;
+      
+      // Remove the site from unlockedUntil if it exists (exact URL match)
+      if (unlockedUntil[url]) {
+        delete unlockedUntil[url];
+        updated = true;
+      }
+      
+      // Also check for normalized hostname matches (fallback case from getSiteKey)
+      // Extract hostname from URL (first part before /)
+      const urlParts = url.split('/');
+      const hostname = urlParts[0].toLowerCase().replace(/^www\./, '');
+      if (unlockedUntil[hostname]) {
+        delete unlockedUntil[hostname];
+        updated = true;
+      }
+      
+      // Save updated unlockedUntil if any changes were made
+      if (updated) {
+        await chrome.storage.sync.set({ unlockedUntil });
+      }
+    } catch (error) {
+      // Error cleaning up unlockedUntil, but continue with removal
+    }
+    
     await saveData();
     renderBlockedList();
   }
