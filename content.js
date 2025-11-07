@@ -847,21 +847,21 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     if (timerStarted) return;
     timerStarted = true;
     
-    // Hide initial elements
+    // Hide initial elements (use setProperty with 'important' to override CSS !important rules)
     if (currentStreak > 0) {
       const streakEl = focusCard.querySelector('.streak-display');
-      if (streakEl) streakEl.style.display = 'none';
+      if (streakEl) streakEl.style.setProperty('display', 'none', 'important');
     }
-    h2.style.display = 'none';
-    subtitle.style.display = 'none';
-    reasonInput.style.display = 'none';
-    submitReasonBtn.style.display = 'none';
+    h2.style.setProperty('display', 'none', 'important');
+    subtitle.style.setProperty('display', 'none', 'important');
+    reasonInput.style.setProperty('display', 'none', 'important');
+    submitReasonBtn.style.setProperty('display', 'none', 'important');
     
     // Show simplified view with random quote (timer runs in background, not visible)
     const randomQuote = getRandomQuote();
     simplifiedQuote.textContent = randomQuote.text;
     simplifiedQuoteAuthor.textContent = `— ${randomQuote.author}`;
-    simplifiedView.style.display = 'block';
+    simplifiedView.style.setProperty('display', 'block', 'important');
     
     // Timer runs in background (not visible)
     timerInterval = setInterval(() => {
