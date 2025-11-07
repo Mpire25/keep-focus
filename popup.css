@@ -4,34 +4,140 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg-primary: #fefdf7;
+  --bg-secondary: white;
+  --bg-tertiary: #f8f9fa;
+  --text-primary: #333;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --border-color: #e9ecef;
+  --accent-color: #d4b896;
+  --accent-hover: #c9a883;
+  --header-bg: linear-gradient(135deg, #f0e6d4 0%, #ede0cc 100%);
+  --header-text: #2c3e50;
+  --input-bg: white;
+  --input-border: #e9ecef;
+  --item-bg: #f8f9fa;
+  --item-hover: #e9ecef;
+  --remove-btn: #dc3545;
+  --remove-btn-hover: #c82333;
+}
+
+body.dark-mode {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #252525;
+  --text-primary: #e0e0e0;
+  --text-secondary: #c0c0c0;
+  --text-tertiary: #a0a0a0;
+  --border-color: #404040;
+  --accent-color: #d4b896;
+  --accent-hover: #c9a883;
+  --header-bg: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+  --header-text: #e0e0e0;
+  --input-bg: #2d2d2d;
+  --input-border: #404040;
+  --item-bg: #252525;
+  --item-hover: #353535;
+  --remove-btn: #dc3545;
+  --remove-btn-hover: #c82333;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   width: 400px;
   max-height: 600px;
-  background: #fefdf7;
-  color: #333;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
-  background: white;
+  background: var(--bg-secondary);
   max-height: 600px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 header {
-  background: linear-gradient(135deg, #f0e6d4 0%, #ede0cc 100%);
-  color: #2c3e50;
+  background: var(--header-bg);
+  color: var(--header-text);
   padding: 24px 20px;
   text-align: center;
+  transition: background 0.3s ease, color 0.3s ease;
+  position: relative;
+}
+
+.dark-mode-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.dark-mode-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .dark-mode-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode-toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.moon-icon,
+.sun-icon {
+  position: absolute;
+  transition: opacity 0.3s ease, color 0.3s ease;
+  color: var(--header-text);
+}
+
+.moon-icon {
+  opacity: 1;
+}
+
+.sun-icon {
+  opacity: 0;
+}
+
+body.dark-mode .moon-icon {
+  opacity: 0;
+}
+
+body.dark-mode .sun-icon {
+  opacity: 1;
 }
 
 header h1 {
   font-size: 28px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
   letter-spacing: -0.5px;
 }
 
@@ -63,11 +169,12 @@ header h1 {
 
 .streak-text {
   font-size: 14px;
-  color: #495057;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .streak-text strong {
-  color: #d4b896;
+  color: var(--accent-color);
   font-weight: 600;
 }
 
@@ -84,8 +191,9 @@ header h1 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 16px;
-  color: #212529;
+  color: var(--text-primary);
   flex-shrink: 0;
+  transition: color 0.3s ease;
 }
 
 .input-group {
@@ -98,15 +206,17 @@ header h1 {
 #siteInput {
   flex: 1;
   padding: 10px 14px;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--input-border);
   border-radius: 6px;
   font-size: 14px;
-  transition: border-color 0.2s;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
 }
 
 #siteInput:focus {
   outline: none;
-  border-color: #d4b896;
+  border-color: var(--accent-color);
 }
 
 #siteInput.error {
@@ -121,6 +231,15 @@ header h1 {
   padding: 0 2px;
 }
 
+.streak-badge {
+  background: rgba(255, 255, 255, 0.7);
+  transition: background 0.3s ease;
+}
+
+body.dark-mode .streak-badge {
+  background: rgba(45, 45, 45, 0.7);
+}
+
 .block-option {
   margin-bottom: 12px;
   flex-shrink: 0;
@@ -131,21 +250,22 @@ header h1 {
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #6c757d;
+  color: var(--text-tertiary);
   cursor: pointer;
   user-select: none;
+  transition: color 0.3s ease;
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 12px;
   height: 12px;
   cursor: pointer;
-  accent-color: #d4b896;
+  accent-color: var(--accent-color);
 }
 
 .btn-primary {
   padding: 10px 20px;
-  background: #d4b896;
+  background: var(--accent-color);
   color: white;
   border: none;
   border-radius: 6px;
@@ -156,7 +276,7 @@ header h1 {
 }
 
 .btn-primary:hover {
-  background: #c9a883;
+  background: var(--accent-hover);
 }
 
 .btn-primary:active {
@@ -177,23 +297,24 @@ header h1 {
   justify-content: space-between;
   padding: 12px;
   margin-bottom: 8px;
-  background: #f8f9fa;
+  background: var(--item-bg);
   border-radius: 6px;
   transition: background 0.2s;
 }
 
 .blocked-item:hover {
-  background: #e9ecef;
+  background: var(--item-hover);
 }
 
 .site-url {
   flex: 1;
   font-size: 14px;
-  color: #495057;
+  color: var(--text-secondary);
   word-break: break-all;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: color 0.3s ease;
 }
 
 .site-url-main {
@@ -202,8 +323,9 @@ header h1 {
 
 .site-url-mode {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--text-tertiary);
   font-style: italic;
+  transition: color 0.3s ease;
 }
 
 .btn-remove {
@@ -225,7 +347,8 @@ header h1 {
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  color: #6c757d;
+  color: var(--text-tertiary);
+  transition: color 0.3s ease;
 }
 
 .empty-state p {
@@ -235,21 +358,24 @@ header h1 {
 
 .footer {
   padding: 20px;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border-color);
   text-align: center;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .atomic-habits-quote {
   font-size: 13px;
   font-style: italic;
-  color: #495057;
+  color: var(--text-secondary);
   margin-bottom: 4px;
   line-height: 1.5;
+  transition: color 0.3s ease;
 }
 
 .quote-author {
   font-size: 11px;
-  color: #6c757d;
+  color: var(--text-tertiary);
+  transition: color 0.3s ease;
 }
 
