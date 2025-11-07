@@ -810,14 +810,8 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   
   // Close tab button handler
   closeTabBtn.addEventListener('click', () => {
-    // Try to close the tab, if that doesn't work, redirect to Google
-    window.close();
-    
-    // If window.close() doesn't work (e.g., tab wasn't opened by script),
-    // redirect to Google homepage after a short delay
-    setTimeout(() => {
-      window.location.href = 'https://www.google.com';
-    }, 100);
+    // Redirect to Google homepage
+    window.location.href = 'https://www.google.com';
   });
   
   // Timer functionality
