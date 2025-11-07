@@ -524,7 +524,8 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }
     
     #keep-focus-overlay .timer-section {
-      margin-bottom: 24px !important;
+      margin-bottom: 0 !important;
+      margin-top: 0 !important;
       display: none !important;
     }
     
@@ -558,7 +559,8 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       cursor: pointer !important;
       transition: all 0.2s !important;
       font-family: inherit !important;
-      margin-bottom: 20px !important;
+      margin-bottom: 0 !important;
+      margin-top: 0 !important;
       display: block !important;
     }
     
@@ -596,6 +598,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       font-family: inherit !important;
       display: none !important;
       margin-top: 0 !important;
+      margin-bottom: 0 !important;
     }
     
     #keep-focus-overlay .unlock-btn.visible {
@@ -627,9 +630,14 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     
     #keep-focus-overlay .simplified-view {
       text-align: center !important;
+      margin-bottom: 0 !important;
+      margin-top: 0 !important;
+      display: block !important;
+    }
+    
+    #keep-focus-overlay .simplified-view.visible {
       margin-bottom: 32px !important;
       margin-top: 40px !important;
-      display: block !important;
     }
     
     #keep-focus-overlay .quote {
@@ -875,6 +883,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     simplifiedQuote.textContent = randomQuote.text;
     simplifiedQuoteAuthor.textContent = `— ${randomQuote.author}`;
     simplifiedView.style.setProperty('display', 'block', 'important');
+    simplifiedView.classList.add('visible');
     
     // Timer runs in background (not visible)
     timerInterval = setInterval(() => {
