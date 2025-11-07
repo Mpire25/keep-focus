@@ -2,13 +2,16 @@
 
 let blockedSites = [];
 let focusStreak = 0;
+let darkMode = false;
 
 // Load data from storage
 async function loadData() {
   try {
-    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak']);
+    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak', 'darkMode']);
     blockedSites = result.blockedSites || [];
     focusStreak = result.focusStreak || 0;
+    darkMode = result.darkMode || false;
+    applyDarkMode();
     renderBlockedList();
     updateStreakDisplay();
   } catch (error) {
@@ -21,11 +24,37 @@ async function saveData() {
   try {
     await chrome.storage.sync.set({
       blockedSites: blockedSites,
-      focusStreak: focusStreak
+      focusStreak: focusStreak,
+      darkMode: darkMode
     });
   } catch (error) {
     // Error saving data
   }
+}
+
+// Apply dark mode to the popup
+function applyDarkMode() {
+  const body = document.body;
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  
+  if (darkMode) {
+    body.classList.add('dark-mode');
+    if (darkModeToggle) {
+      darkModeToggle.checked = true;
+    }
+  } else {
+    body.classList.remove('dark-mode');
+    if (darkModeToggle) {
+      darkModeToggle.checked = false;
+    }
+  }
+}
+
+// Toggle dark mode
+async function toggleDarkMode() {
+  darkMode = !darkMode;
+  applyDarkMode();
+  await chrome.storage.sync.set({ darkMode: darkMode });
 }
 
 // Render the blocked sites list
@@ -266,8 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
 
   const siteInput = document.getElementById('siteInput');
+  const darkModeToggle = document.getElementById('darkModeToggle');
   
   document.getElementById('addBtn').addEventListener('click', addSite);
+  
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('change', toggleDarkMode);
+  }
   
   siteInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {

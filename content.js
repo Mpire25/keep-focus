@@ -284,7 +284,7 @@ function getSiteKey(normalizedUrl, blockedSites) {
 }
 
 // Show the blocking overlay
-function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
+async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -298,6 +298,10 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   if (overlay) {
     return; // Overlay already shown
   }
+  
+  // Get dark mode preference
+  const result = await chrome.storage.sync.get(['darkMode']);
+  const darkMode = result.darkMode || false;
   
   // Hide all existing body content without destroying it
   const body = document.body;
@@ -316,7 +320,15 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   overlay = document.createElement('div');
   overlay.id = 'keep-focus-overlay';
   
+  // Set dark mode class if enabled
+  if (darkMode) {
+    overlay.classList.add('dark-mode');
+  }
+  
   // Apply inline styles directly to overlay element to prevent inheritance
+  const bgColor = darkMode ? '#1a1a1a' : '#fefdf7';
+  const textColor = darkMode ? '#e0e0e0' : '#333';
+  
   overlay.style.cssText = `
     all: unset !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
@@ -330,8 +342,8 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     text-transform: none !important;
     text-indent: 0 !important;
     text-shadow: none !important;
-    color: #333 !important;
-    background: #fefdf7 !important;
+    color: ${textColor} !important;
+    background: ${bgColor} !important;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
@@ -379,8 +391,8 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       text-transform: none !important;
       text-indent: 0 !important;
       text-shadow: none !important;
-      color: #333 !important;
-      background: #fefdf7 !important;
+      color: ${textColor} !important;
+      background: ${bgColor} !important;
       border: none !important;
       outline: none !important;
       box-shadow: none !important;
@@ -440,10 +452,10 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }
     
     #keep-focus-overlay .focus-card {
-      background: white !important;
+      background: ${darkMode ? '#2d2d2d' : 'white'} !important;
       border-radius: 16px !important;
       padding: 40px !important;
-      box-shadow: 0 20px 60px rgba(212, 184, 150, 0.15) !important;
+      box-shadow: 0 20px 60px ${darkMode ? 'rgba(0, 0, 0, 0.5)' : 'rgba(212, 184, 150, 0.15)'} !important;
       text-align: center !important;
       display: block !important;
     }
@@ -451,10 +463,10 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     #keep-focus-overlay .streak-display {
       margin-bottom: 24px !important;
       padding: 12px !important;
-      background: #f5f7fa !important;
+      background: ${darkMode ? '#252525' : '#f5f7fa'} !important;
       border-radius: 8px !important;
       font-size: 14px !important;
-      color: #495057 !important;
+      color: ${darkMode ? '#c0c0c0' : '#495057'} !important;
       display: block !important;
     }
     
@@ -473,14 +485,14 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       font-size: 28px !important;
       font-weight: 700 !important;
       margin-bottom: 12px !important;
-      color: #212529 !important;
+      color: ${darkMode ? '#e0e0e0' : '#212529'} !important;
       letter-spacing: -0.5px !important;
       display: block !important;
     }
     
     #keep-focus-overlay .subtitle {
       font-size: 16px !important;
-      color: #6c757d !important;
+      color: ${darkMode ? '#a0a0a0' : '#6c757d'} !important;
       margin-bottom: 32px !important;
       line-height: 1.5 !important;
       display: block !important;
@@ -489,14 +501,15 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     #keep-focus-overlay .reason-input {
       width: 100% !important;
       padding: 14px !important;
-      border: 2px solid #e9ecef !important;
+      border: 2px solid ${darkMode ? '#404040' : '#e9ecef'} !important;
       border-radius: 8px !important;
       font-size: 14px !important;
       margin-bottom: 20px !important;
       transition: border-color 0.2s !important;
       font-family: inherit !important;
       display: block !important;
-      background: white !important;
+      background: ${darkMode ? '#2d2d2d' : 'white'} !important;
+      color: ${darkMode ? '#e0e0e0' : '#333'} !important;
     }
     
     #keep-focus-overlay .reason-input:focus {
@@ -505,7 +518,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }
     
     #keep-focus-overlay .reason-input:disabled {
-      background: #f5f7fa !important;
+      background: ${darkMode ? '#252525' : '#f5f7fa'} !important;
       cursor: not-allowed !important;
       opacity: 0.7 !important;
     }
@@ -529,7 +542,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     
     #keep-focus-overlay .timer-label {
       font-size: 14px !important;
-      color: #6c757d !important;
+      color: ${darkMode ? '#a0a0a0' : '#6c757d'} !important;
       display: block !important;
     }
     
@@ -608,7 +621,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     #keep-focus-overlay .quote-section {
       margin-top: 32px !important;
       padding-top: 24px !important;
-      border-top: 1px solid #e9ecef !important;
+      border-top: 1px solid ${darkMode ? '#404040' : '#e9ecef'} !important;
       display: block !important;
     }
     
@@ -622,7 +635,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     #keep-focus-overlay .quote {
       font-size: 20px !important;
       font-style: italic !important;
-      color: #495057 !important;
+      color: ${darkMode ? '#c0c0c0' : '#495057'} !important;
       line-height: 1.8 !important;
       margin-bottom: 16px !important;
       max-width: 600px !important;
@@ -634,7 +647,7 @@ function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     
     #keep-focus-overlay .quote-author {
       font-size: 14px !important;
-      color: #6c757d !important;
+      color: ${darkMode ? '#a0a0a0' : '#6c757d'} !important;
       font-weight: 500 !important;
       display: block !important;
     }
