@@ -885,7 +885,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   
   // Timer functionality
   const TIMER_DURATION = 15; // seconds
-  const UNLOCK_DURATION = 1 * 60 * 1000; // 10 minutes
+  const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
   
   // Focus and productivity quotes
   const focusQuotes = [
