@@ -38,7 +38,12 @@ function startUnlockExpirationCheck() {
         checkAndBlockSite();
       }
     } catch (error) {
-      // Error checking unlock status, continue checking
+      // Extension context invalidated or other error - stop checking
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        stopUnlockExpirationCheck();
+        return;
+      }
+      // Other errors - continue checking
     }
   }, 30000); // Check every 30 seconds
 }
@@ -61,7 +66,16 @@ async function checkAndBlockSite() {
   const normalizedUrl = normalizeUrl(currentUrl);
   
   // Get blocked sites and unlock status from storage
-  const result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil', 'focusStreak']);
+  let result;
+  try {
+    result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil', 'focusStreak']);
+  } catch (error) {
+    // Extension context invalidated - can't check, exit silently
+    if (error.message && error.message.includes('Extension context invalidated')) {
+      return;
+    }
+    throw error; // Re-throw other errors
+  }
   const blockedSites = result.blockedSites || [];
   const unlockedUntil = result.unlockedUntil || {};
   const focusStreak = result.focusStreak || 0;
@@ -113,7 +127,14 @@ async function checkAndBlockSite() {
   if (!unlockTimestamp || timeSinceLastUnlock > (UNLOCK_WINDOW + STREAK_INCREMENT_THRESHOLD)) {
     // They likely closed the tab last time - increment streak
     newStreak = focusStreak + 1;
-    chrome.storage.sync.set({ focusStreak: newStreak });
+    try {
+      await chrome.storage.sync.set({ focusStreak: newStreak });
+    } catch (error) {
+      // Extension context invalidated - ignore, continue with current streak
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        newStreak = focusStreak;
+      }
+    }
   }
   
   showBlockOverlay(normalizedUrl, siteKey, newStreak);
@@ -369,7 +390,17 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   }
   
   // Get dark mode preference
-  const result = await chrome.storage.sync.get(['darkMode']);
+  let result;
+  try {
+    result = await chrome.storage.sync.get(['darkMode']);
+  } catch (error) {
+    // Extension context invalidated - use default dark mode
+    if (error.message && error.message.includes('Extension context invalidated')) {
+      result = { darkMode: false };
+    } else {
+      throw error; // Re-throw other errors
+    }
+  }
   const darkMode = result.darkMode || false;
   
   // Hide all existing body content without destroying it
@@ -1001,7 +1032,11 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         // Reload the page
         window.location.reload();
       } catch (error) {
-        // Error unlocking site
+        // Extension context invalidated - just reload the page anyway
+        if (error.message && error.message.includes('Extension context invalidated')) {
+          window.location.reload();
+        }
+        // Other errors - ignore
       }
     }
   });
