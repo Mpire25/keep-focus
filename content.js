@@ -19,49 +19,7 @@ function startUnlockExpirationCheck() {
       const unlockedUntil = result.unlockedUntil || {};
       
       // Check if current site is blocked
-      const urlParts = normalizedUrl.split('/');
-      const currentHostname = urlParts[0];
-      const currentPath = urlParts.slice(1).join('/');
-      
-      const isBlocked = blockedSites.some(blockedSiteObj => {
-        const blockedSite = blockedSiteObj.url;
-        const blockChildren = blockedSiteObj.blockChildren !== false;
-        
-        const blockedParts = blockedSite.split('/');
-        const blockedHostname = blockedParts[0];
-        const blockedPath = blockedParts.slice(1).join('/');
-        
-        const normalizedCurrentHostname = normalizeHostname(currentHostname);
-        const normalizedBlockedHostname = normalizeHostname(blockedHostname);
-        
-        const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
-        
-        if (!hostnameMatch) {
-          return false;
-        }
-        
-        if (!blockedPath) {
-          if (blockChildren) {
-            return true;
-          } else {
-            const isExactDomain = !currentPath || currentPath === '';
-            return isExactDomain;
-          }
-        }
-        
-        const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
-        
-        let pathMatch = false;
-        if (blockChildren) {
-          pathMatch = normalizedUrl === normalizedBlockedSite || 
-                 normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
-                 currentPath === blockedPath ||
-                 currentPath.startsWith(blockedPath + '/');
-        } else {
-          pathMatch = normalizedUrl === normalizedBlockedSite || currentPath === blockedPath;
-        }
-        return pathMatch;
-      });
+      const isBlocked = isSiteBlocked(normalizedUrl, blockedSites);
       
       if (!isBlocked) {
         // Site is no longer blocked, stop checking
@@ -109,76 +67,11 @@ async function checkAndBlockSite() {
   const focusStreak = result.focusStreak || 0;
 
   // Check if current site is blocked
-  const urlParts = normalizedUrl.split('/');
-  const currentHostname = urlParts[0];
-  const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
-  
-  const isBlocked = blockedSites.some(blockedSiteObj => {
-    const blockedSite = blockedSiteObj.url;
-    const blockChildren = blockedSiteObj.blockChildren !== false; // Default to true if undefined
-    
-    const blockedParts = blockedSite.split('/');
-    const blockedHostname = blockedParts[0];
-    const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
-    
-    // Normalize both hostnames for comparison (remove www. prefix)
-    const normalizedCurrentHostname = normalizeHostname(currentHostname);
-    const normalizedBlockedHostname = normalizeHostname(blockedHostname);
-    
-    // Check if normalized hostnames match
-    const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
-    
-    if (!hostnameMatch) {
-      return false; // Different domain, not blocked
-    }
-    
-    // If blocked site has no path (domain-only block)
-    if (!blockedPath) {
-      // If blockChildren is true, block everything on that domain
-      // If blockChildren is false, only block the exact domain (no subpages)
-      if (blockChildren) {
-        return true;
-      } else {
-        // Only block if current URL has no path (exact domain match)
-        const isExactDomain = !currentPath || currentPath === '';
-        return isExactDomain;
-      }
-    }
-    
-    // Normalize blocked site for comparison (remove www. from hostname)
-    const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
-    
-    // If blockChildren is true, block exact match and all subpaths
-    // If blockChildren is false, only block exact match
-    let pathMatch = false;
-    if (blockChildren) {
-      // Block if current URL matches exactly or starts with the blocked path followed by '/'
-      // e.g., "youtube.com/shorts" blocks "youtube.com/shorts" and "youtube.com/shorts/anything"
-      pathMatch = normalizedUrl === normalizedBlockedSite || 
-             normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
-             currentPath === blockedPath ||
-             currentPath.startsWith(blockedPath + '/');
-    } else {
-      // Only block exact match (no subpaths)
-      // e.g., "youtube.com/shorts" only blocks "youtube.com/shorts", NOT "youtube.com/shorts/1"
-      pathMatch = normalizedUrl === normalizedBlockedSite || currentPath === blockedPath;
-    }
-    return pathMatch;
-  });
+  const isBlocked = isSiteBlocked(normalizedUrl, blockedSites);
 
   if (!isBlocked) {
     // Remove overlay if it exists (in case URL changed from blocked to unblocked)
-    const existingOverlay = document.getElementById('keep-focus-overlay');
-    if (existingOverlay) {
-      existingOverlay.remove();
-      // Restore body content
-      Array.from(document.body.children).forEach(child => {
-        if (child.id !== 'keep-focus-overlay') {
-          child.style.display = '';
-        }
-      });
-      document.body.style.overflow = '';
-    }
+    removeOverlayAndRestoreBody();
     // Stop unlock expiration check since site is not blocked
     stopUnlockExpirationCheck();
     return; // Site is not blocked, do nothing
@@ -193,17 +86,7 @@ async function checkAndBlockSite() {
   if (unlockTimestamp && now < unlockTimestamp) {
     // Site is still unlocked, do nothing
     // Remove overlay if it exists (in case URL changed and site is now unlocked)
-    const existingOverlay = document.getElementById('keep-focus-overlay');
-    if (existingOverlay) {
-      existingOverlay.remove();
-      // Restore body content
-      Array.from(document.body.children).forEach(child => {
-        if (child.id !== 'keep-focus-overlay') {
-          child.style.display = '';
-        }
-      });
-      document.body.style.overflow = '';
-    }
+    removeOverlayAndRestoreBody();
     // Start periodic check for unlock expiration
     startUnlockExpirationCheck();
     return;
@@ -307,6 +190,68 @@ function setupUrlChangeDetection() {
     stopUnlockExpirationCheck();
   });
 })();
+
+// Remove overlay and restore body content
+function removeOverlayAndRestoreBody() {
+  const existingOverlay = document.getElementById('keep-focus-overlay');
+  if (existingOverlay) {
+    existingOverlay.remove();
+    // Restore body content
+    Array.from(document.body.children).forEach(child => {
+      if (child.id !== 'keep-focus-overlay') {
+        child.style.display = '';
+      }
+    });
+    document.body.style.overflow = '';
+  }
+}
+
+// Check if a site is blocked
+function isSiteBlocked(normalizedUrl, blockedSites) {
+  const urlParts = normalizedUrl.split('/');
+  const currentHostname = urlParts[0];
+  const currentPath = urlParts.slice(1).join('/');
+  
+  return blockedSites.some(blockedSiteObj => {
+    const blockedSite = blockedSiteObj.url;
+    const blockChildren = blockedSiteObj.blockChildren !== false;
+    
+    const blockedParts = blockedSite.split('/');
+    const blockedHostname = blockedParts[0];
+    const blockedPath = blockedParts.slice(1).join('/');
+    
+    const normalizedCurrentHostname = normalizeHostname(currentHostname);
+    const normalizedBlockedHostname = normalizeHostname(blockedHostname);
+    
+    const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
+    
+    if (!hostnameMatch) {
+      return false;
+    }
+    
+    if (!blockedPath) {
+      if (blockChildren) {
+        return true;
+      } else {
+        const isExactDomain = !currentPath || currentPath === '';
+        return isExactDomain;
+      }
+    }
+    
+    const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
+    
+    let pathMatch = false;
+    if (blockChildren) {
+      pathMatch = normalizedUrl === normalizedBlockedSite || 
+             normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
+             currentPath === blockedPath ||
+             currentPath.startsWith(blockedPath + '/');
+    } else {
+      pathMatch = normalizedUrl === normalizedBlockedSite || currentPath === blockedPath;
+    }
+    return pathMatch;
+  });
+}
 
 // Normalize hostname by removing www. prefix for consistent matching
 function normalizeHostname(hostname) {
