@@ -238,6 +238,14 @@ function validateUrl(url) {
   }
 }
 
+// Normalize hostname by removing www. prefix for consistent matching
+function normalizeHostname(hostname) {
+  if (!hostname) return hostname;
+  // Remove www. prefix if present (case-insensitive)
+  const normalized = hostname.toLowerCase().replace(/^www\./, '');
+  return normalized;
+}
+
 // Normalize URL for consistent matching
 function normalizeUrl(url) {
   if (!url) return '';
@@ -246,9 +254,6 @@ function normalizeUrl(url) {
   
   // Remove protocol (http://, https://)
   normalized = normalized.replace(/^https?:\/\//i, '');
-  
-  // Remove www. prefix (case-insensitive)
-  normalized = normalized.replace(/^www\./i, '');
   
   // Remove trailing slash
   normalized = normalized.replace(/\/$/, '');
@@ -261,16 +266,17 @@ function normalizeUrl(url) {
       normalized = 'https://' + normalized;
     }
     const urlObj = new URL(normalized);
-    const hostname = urlObj.hostname.replace(/^www\./i, '');
+    // Use normalizeHostname helper for consistency
+    const hostname = normalizeHostname(urlObj.hostname);
     const pathname = urlObj.pathname.replace(/\/$/, '');
     normalized = hostname.toLowerCase() + pathname.toLowerCase();
   } catch (e) {
     // If parsing fails, just clean up what we can
     // Split by / to separate domain from path
     const parts = normalized.split('/');
-    const domain = parts[0].replace(/^www\./i, '').toLowerCase();
+    const domain = normalizeHostname(parts[0]);
     const path = parts.slice(1).join('/').toLowerCase();
-    normalized = domain + (path ? '/' + path : '');
+    normalized = domain.toLowerCase() + (path ? '/' + path : '');
   }
   
   return normalized;

@@ -263,22 +263,38 @@ function normalizeHostname(hostname) {
 
 // Normalize URL for consistent matching
 function normalizeUrl(url) {
+  if (!url) return '';
+  
+  let normalized = url.trim();
+  
+  // Remove protocol (http://, https://)
+  normalized = normalized.replace(/^https?:\/\//i, '');
+  
+  // Remove trailing slash
+  normalized = normalized.replace(/\/$/, '');
+  
+  // Remove fragment and query parameters for the base URL
+  // But keep the path if it exists
   try {
-    const urlObj = new URL(url);
-    
-    // Normalize hostname (remove www. prefix)
-    const normalizedHostname = normalizeHostname(urlObj.hostname);
-    let normalized = normalizedHostname + urlObj.pathname;
-    // Remove trailing slash
-    normalized = normalized.replace(/\/$/, '');
-    // Convert to lowercase for case-insensitive matching
-    const result = normalized.toLowerCase();
-    
-    return result;
+    // Try to parse as URL to handle paths properly
+    if (!/^https?:\/\//i.test(normalized)) {
+      normalized = 'https://' + normalized;
+    }
+    const urlObj = new URL(normalized);
+    // Use normalizeHostname helper for consistency
+    const hostname = normalizeHostname(urlObj.hostname);
+    const pathname = urlObj.pathname.replace(/\/$/, '');
+    normalized = hostname.toLowerCase() + pathname.toLowerCase();
   } catch (e) {
-    // If URL parsing fails, try to lowercase the input
-    return url.toLowerCase();
+    // If parsing fails, just clean up what we can
+    // Split by / to separate domain from path
+    const parts = normalized.split('/');
+    const domain = normalizeHostname(parts[0]);
+    const path = parts.slice(1).join('/').toLowerCase();
+    normalized = domain.toLowerCase() + (path ? '/' + path : '');
   }
+  
+  return normalized;
 }
 
 // Get site key for storage
