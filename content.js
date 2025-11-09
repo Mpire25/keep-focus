@@ -1,5 +1,61 @@
 // Content script that runs on all pages to block sites
 
+// Global variable to track unlock expiration check interval
+let unlockExpirationCheckInterval = null;
+
+// Start periodic check for unlock expiration
+function startUnlockExpirationCheck() {
+  // Clear any existing interval
+  stopUnlockExpirationCheck();
+  
+  // Check every 30 seconds if unlock period has expired
+  unlockExpirationCheckInterval = setInterval(async () => {
+    try {
+      const currentUrl = window.location.href;
+      const normalizedUrl = normalizeUrl(currentUrl);
+      
+      const result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil']);
+      const blockedSites = result.blockedSites || [];
+      const unlockedUntil = result.unlockedUntil || {};
+      
+      // Check if current site is blocked
+      const isBlocked = isSiteBlocked(normalizedUrl, blockedSites);
+      
+      if (!isBlocked) {
+        // Site is no longer blocked, stop checking
+        stopUnlockExpirationCheck();
+        return;
+      }
+      
+      // Get site key and check unlock status
+      const siteKey = getSiteKey(normalizedUrl, blockedSites);
+      const unlockTimestamp = unlockedUntil[siteKey];
+      const now = Date.now();
+      
+      // If unlock period has expired, re-check and block
+      if (!unlockTimestamp || now >= unlockTimestamp) {
+        stopUnlockExpirationCheck();
+        checkAndBlockSite();
+      }
+    } catch (error) {
+      // Extension context invalidated or other error - stop checking
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        stopUnlockExpirationCheck();
+        return;
+      }
+      // Other errors - continue checking
+    }
+  }, 30000); // Check every 30 seconds
+}
+
+// Stop periodic check for unlock expiration
+function stopUnlockExpirationCheck() {
+  if (unlockExpirationCheckInterval !== null) {
+    clearInterval(unlockExpirationCheckInterval);
+    unlockExpirationCheckInterval = null;
+  }
+}
+
 // Main function to check and block sites
 async function checkAndBlockSite() {
   'use strict';
@@ -10,82 +66,28 @@ async function checkAndBlockSite() {
   const normalizedUrl = normalizeUrl(currentUrl);
   
   // Get blocked sites and unlock status from storage
-  const result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil', 'focusStreak']);
+  let result;
+  try {
+    result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil', 'focusStreak']);
+  } catch (error) {
+    // Extension context invalidated - can't check, exit silently
+    if (error.message && error.message.includes('Extension context invalidated')) {
+      return;
+    }
+    throw error; // Re-throw other errors
+  }
   const blockedSites = result.blockedSites || [];
   const unlockedUntil = result.unlockedUntil || {};
   const focusStreak = result.focusStreak || 0;
 
   // Check if current site is blocked
-  const urlParts = normalizedUrl.split('/');
-  const currentHostname = urlParts[0];
-  const currentPath = urlParts.slice(1).join('/'); // Get path after hostname
-  
-  const isBlocked = blockedSites.some(blockedSiteObj => {
-    const blockedSite = blockedSiteObj.url;
-    const blockChildren = blockedSiteObj.blockChildren !== false; // Default to true if undefined
-    
-    const blockedParts = blockedSite.split('/');
-    const blockedHostname = blockedParts[0];
-    const blockedPath = blockedParts.slice(1).join('/'); // Get path after hostname
-    
-    // Normalize both hostnames for comparison (remove www. prefix)
-    const normalizedCurrentHostname = normalizeHostname(currentHostname);
-    const normalizedBlockedHostname = normalizeHostname(blockedHostname);
-    
-    // Check if normalized hostnames match
-    const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
-    
-    if (!hostnameMatch) {
-      return false; // Different domain, not blocked
-    }
-    
-    // If blocked site has no path (domain-only block)
-    if (!blockedPath) {
-      // If blockChildren is true, block everything on that domain
-      // If blockChildren is false, only block the exact domain (no subpages)
-      if (blockChildren) {
-        return true;
-      } else {
-        // Only block if current URL has no path (exact domain match)
-        const isExactDomain = !currentPath || currentPath === '';
-        return isExactDomain;
-      }
-    }
-    
-    // Normalize blocked site for comparison (remove www. from hostname)
-    const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
-    
-    // If blockChildren is true, block exact match and all subpaths
-    // If blockChildren is false, only block exact match
-    let pathMatch = false;
-    if (blockChildren) {
-      // Block if current URL matches exactly or starts with the blocked path followed by '/'
-      // e.g., "youtube.com/shorts" blocks "youtube.com/shorts" and "youtube.com/shorts/anything"
-      pathMatch = normalizedUrl === normalizedBlockedSite || 
-             normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
-             currentPath === blockedPath ||
-             currentPath.startsWith(blockedPath + '/');
-    } else {
-      // Only block exact match (no subpaths)
-      // e.g., "youtube.com/shorts" only blocks "youtube.com/shorts", NOT "youtube.com/shorts/1"
-      pathMatch = normalizedUrl === normalizedBlockedSite || currentPath === blockedPath;
-    }
-    return pathMatch;
-  });
+  const isBlocked = isSiteBlocked(normalizedUrl, blockedSites);
 
   if (!isBlocked) {
     // Remove overlay if it exists (in case URL changed from blocked to unblocked)
-    const existingOverlay = document.getElementById('keep-focus-overlay');
-    if (existingOverlay) {
-      existingOverlay.remove();
-      // Restore body content
-      Array.from(document.body.children).forEach(child => {
-        if (child.id !== 'keep-focus-overlay') {
-          child.style.display = '';
-        }
-      });
-      document.body.style.overflow = '';
-    }
+    removeOverlayAndRestoreBody();
+    // Stop unlock expiration check since site is not blocked
+    stopUnlockExpirationCheck();
     return; // Site is not blocked, do nothing
   }
 
@@ -94,22 +96,13 @@ async function checkAndBlockSite() {
   
   const unlockTimestamp = unlockedUntil[siteKey];
   const now = Date.now();
-  const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
 
   if (unlockTimestamp && now < unlockTimestamp) {
     // Site is still unlocked, do nothing
     // Remove overlay if it exists (in case URL changed and site is now unlocked)
-    const existingOverlay = document.getElementById('keep-focus-overlay');
-    if (existingOverlay) {
-      existingOverlay.remove();
-      // Restore body content
-      Array.from(document.body.children).forEach(child => {
-        if (child.id !== 'keep-focus-overlay') {
-          child.style.display = '';
-        }
-      });
-      document.body.style.overflow = '';
-    }
+    removeOverlayAndRestoreBody();
+    // Start periodic check for unlock expiration
+    startUnlockExpirationCheck();
     return;
   }
 
@@ -119,7 +112,8 @@ async function checkAndBlockSite() {
     return;
   }
 
-  // Site is blocked - show overlay
+  // Site is blocked - stop unlock expiration check and show overlay
+  stopUnlockExpirationCheck();
   // Increment streak if they closed the tab last time instead of unlocking
   // We track this by checking if there's no recent unlock for this site
   // Only increment if it's been a while since last unlock (they likely closed tab)
@@ -133,7 +127,14 @@ async function checkAndBlockSite() {
   if (!unlockTimestamp || timeSinceLastUnlock > (UNLOCK_WINDOW + STREAK_INCREMENT_THRESHOLD)) {
     // They likely closed the tab last time - increment streak
     newStreak = focusStreak + 1;
-    chrome.storage.sync.set({ focusStreak: newStreak });
+    try {
+      await chrome.storage.sync.set({ focusStreak: newStreak });
+    } catch (error) {
+      // Extension context invalidated - ignore, continue with current streak
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        newStreak = focusStreak;
+      }
+    }
   }
   
   showBlockOverlay(normalizedUrl, siteKey, newStreak);
@@ -154,6 +155,8 @@ function setupUrlChangeDetection() {
     const currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
+      // Stop unlock expiration check when URL changes
+      stopUnlockExpirationCheck();
       checkAndBlockSite();
     }
   }, 500); // Check every 500ms
@@ -161,30 +164,34 @@ function setupUrlChangeDetection() {
   // Listen for popstate (back/forward button)
   window.addEventListener('popstate', () => {
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     checkAndBlockSite();
   });
-  
+
   // Intercept pushState and replaceState for SPA navigation
   const originalPushState = history.pushState;
   const originalReplaceState = history.replaceState;
-  
+
   history.pushState = function(...args) {
     originalPushState.apply(history, args);
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     // Use setTimeout to allow the page to update
     setTimeout(() => checkAndBlockSite(), 100);
   };
-  
+
   history.replaceState = function(...args) {
     originalReplaceState.apply(history, args);
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     // Use setTimeout to allow the page to update
     setTimeout(() => checkAndBlockSite(), 100);
   };
-  
+
   // Also listen for hash changes
   window.addEventListener('hashchange', () => {
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     checkAndBlockSite();
   });
 }
@@ -198,7 +205,74 @@ function setupUrlChangeDetection() {
   
   // Set up URL change detection
   setupUrlChangeDetection();
+  
+  // Stop unlock expiration check when page unloads
+  window.addEventListener('beforeunload', () => {
+    stopUnlockExpirationCheck();
+  });
 })();
+
+// Remove overlay and restore body content
+function removeOverlayAndRestoreBody() {
+  const existingOverlay = document.getElementById('keep-focus-overlay');
+  if (existingOverlay) {
+    existingOverlay.remove();
+    // Restore body content
+    Array.from(document.body.children).forEach(child => {
+      if (child.id !== 'keep-focus-overlay') {
+        child.style.display = '';
+      }
+    });
+    document.body.style.overflow = '';
+  }
+}
+
+// Check if a site is blocked
+function isSiteBlocked(normalizedUrl, blockedSites) {
+  const urlParts = normalizedUrl.split('/');
+  const currentHostname = urlParts[0];
+  const currentPath = urlParts.slice(1).join('/');
+  
+  return blockedSites.some(blockedSiteObj => {
+    const blockedSite = blockedSiteObj.url;
+    const blockChildren = blockedSiteObj.blockChildren !== false;
+    
+    const blockedParts = blockedSite.split('/');
+    const blockedHostname = blockedParts[0];
+    const blockedPath = blockedParts.slice(1).join('/');
+    
+    const normalizedCurrentHostname = normalizeHostname(currentHostname);
+    const normalizedBlockedHostname = normalizeHostname(blockedHostname);
+    
+    const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
+    
+    if (!hostnameMatch) {
+      return false;
+    }
+    
+    if (!blockedPath) {
+      if (blockChildren) {
+        return true;
+      } else {
+        const isExactDomain = !currentPath || currentPath === '';
+        return isExactDomain;
+      }
+    }
+    
+    const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
+    
+    let pathMatch = false;
+    if (blockChildren) {
+      pathMatch = normalizedUrl === normalizedBlockedSite || 
+             normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
+             currentPath === blockedPath ||
+             currentPath.startsWith(blockedPath + '/');
+    } else {
+      pathMatch = normalizedUrl === normalizedBlockedSite || currentPath === blockedPath;
+    }
+    return pathMatch;
+  });
+}
 
 // Normalize hostname by removing www. prefix for consistent matching
 function normalizeHostname(hostname) {
@@ -210,22 +284,38 @@ function normalizeHostname(hostname) {
 
 // Normalize URL for consistent matching
 function normalizeUrl(url) {
+  if (!url) return '';
+  
+  let normalized = url.trim();
+  
+  // Remove protocol (http://, https://)
+  normalized = normalized.replace(/^https?:\/\//i, '');
+  
+  // Remove trailing slash
+  normalized = normalized.replace(/\/$/, '');
+  
+  // Remove fragment and query parameters for the base URL
+  // But keep the path if it exists
   try {
-    const urlObj = new URL(url);
-    
-    // Normalize hostname (remove www. prefix)
-    const normalizedHostname = normalizeHostname(urlObj.hostname);
-    let normalized = normalizedHostname + urlObj.pathname;
-    // Remove trailing slash
-    normalized = normalized.replace(/\/$/, '');
-    // Convert to lowercase for case-insensitive matching
-    const result = normalized.toLowerCase();
-    
-    return result;
+    // Try to parse as URL to handle paths properly
+    if (!/^https?:\/\//i.test(normalized)) {
+      normalized = 'https://' + normalized;
+    }
+    const urlObj = new URL(normalized);
+    // Use normalizeHostname helper for consistency
+    const hostname = normalizeHostname(urlObj.hostname);
+    const pathname = urlObj.pathname.replace(/\/$/, '');
+    normalized = hostname.toLowerCase() + pathname.toLowerCase();
   } catch (e) {
-    // If URL parsing fails, try to lowercase the input
-    return url.toLowerCase();
+    // If parsing fails, just clean up what we can
+    // Split by / to separate domain from path
+    const parts = normalized.split('/');
+    const domain = normalizeHostname(parts[0]);
+    const path = parts.slice(1).join('/').toLowerCase();
+    normalized = domain.toLowerCase() + (path ? '/' + path : '');
   }
+  
+  return normalized;
 }
 
 // Get site key for storage
@@ -300,7 +390,17 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   }
   
   // Get dark mode preference
-  const result = await chrome.storage.sync.get(['darkMode']);
+  let result;
+  try {
+    result = await chrome.storage.sync.get(['darkMode']);
+  } catch (error) {
+    // Extension context invalidated - use default dark mode
+    if (error.message && error.message.includes('Extension context invalidated')) {
+      result = { darkMode: false };
+    } else {
+      throw error; // Re-throw other errors
+    }
+  }
   const darkMode = result.darkMode || false;
   
   // Hide all existing body content without destroying it
@@ -932,7 +1032,11 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
         // Reload the page
         window.location.reload();
       } catch (error) {
-        // Error unlocking site
+        // Extension context invalidated - just reload the page anyway
+        if (error.message && error.message.includes('Extension context invalidated')) {
+          window.location.reload();
+        }
+        // Other errors - ignore
       }
     }
   });
