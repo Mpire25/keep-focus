@@ -1,5 +1,98 @@
 // Content script that runs on all pages to block sites
 
+// Global variable to track unlock expiration check interval
+let unlockExpirationCheckInterval = null;
+
+// Start periodic check for unlock expiration
+function startUnlockExpirationCheck() {
+  // Clear any existing interval
+  stopUnlockExpirationCheck();
+  
+  // Check every 30 seconds if unlock period has expired
+  unlockExpirationCheckInterval = setInterval(async () => {
+    try {
+      const currentUrl = window.location.href;
+      const normalizedUrl = normalizeUrl(currentUrl);
+      
+      const result = await chrome.storage.sync.get(['blockedSites', 'unlockedUntil']);
+      const blockedSites = result.blockedSites || [];
+      const unlockedUntil = result.unlockedUntil || {};
+      
+      // Check if current site is blocked
+      const urlParts = normalizedUrl.split('/');
+      const currentHostname = urlParts[0];
+      const currentPath = urlParts.slice(1).join('/');
+      
+      const isBlocked = blockedSites.some(blockedSiteObj => {
+        const blockedSite = blockedSiteObj.url;
+        const blockChildren = blockedSiteObj.blockChildren !== false;
+        
+        const blockedParts = blockedSite.split('/');
+        const blockedHostname = blockedParts[0];
+        const blockedPath = blockedParts.slice(1).join('/');
+        
+        const normalizedCurrentHostname = normalizeHostname(currentHostname);
+        const normalizedBlockedHostname = normalizeHostname(blockedHostname);
+        
+        const hostnameMatch = normalizedCurrentHostname === normalizedBlockedHostname;
+        
+        if (!hostnameMatch) {
+          return false;
+        }
+        
+        if (!blockedPath) {
+          if (blockChildren) {
+            return true;
+          } else {
+            const isExactDomain = !currentPath || currentPath === '';
+            return isExactDomain;
+          }
+        }
+        
+        const normalizedBlockedSite = normalizedBlockedHostname + (blockedPath ? '/' + blockedPath : '');
+        
+        let pathMatch = false;
+        if (blockChildren) {
+          pathMatch = normalizedUrl === normalizedBlockedSite || 
+                 normalizedUrl.startsWith(normalizedBlockedSite + '/') ||
+                 currentPath === blockedPath ||
+                 currentPath.startsWith(blockedPath + '/');
+        } else {
+          pathMatch = normalizedUrl === normalizedBlockedSite || currentPath === blockedPath;
+        }
+        return pathMatch;
+      });
+      
+      if (!isBlocked) {
+        // Site is no longer blocked, stop checking
+        stopUnlockExpirationCheck();
+        return;
+      }
+      
+      // Get site key and check unlock status
+      const siteKey = getSiteKey(normalizedUrl, blockedSites);
+      const unlockTimestamp = unlockedUntil[siteKey];
+      const now = Date.now();
+      
+      // If unlock period has expired, re-check and block
+      if (!unlockTimestamp || now >= unlockTimestamp) {
+        stopUnlockExpirationCheck();
+        checkAndBlockSite();
+      }
+    } catch (error) {
+      // Error checking unlock status, continue checking
+    }
+  }, 30000); // Check every 30 seconds
+}
+
+// Stop periodic check for unlock expiration
+function stopUnlockExpirationCheck() {
+  if (unlockExpirationCheckInterval !== null) {
+    clearInterval(unlockExpirationCheckInterval);
+    unlockExpirationCheckInterval = null;
+  }
+}
+
 // Main function to check and block sites
 async function checkAndBlockSite() {
   'use strict';
@@ -86,6 +179,8 @@ async function checkAndBlockSite() {
       });
       document.body.style.overflow = '';
     }
+    // Stop unlock expiration check since site is not blocked
+    stopUnlockExpirationCheck();
     return; // Site is not blocked, do nothing
   }
 
@@ -94,7 +189,6 @@ async function checkAndBlockSite() {
   
   const unlockTimestamp = unlockedUntil[siteKey];
   const now = Date.now();
-  const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
 
   if (unlockTimestamp && now < unlockTimestamp) {
     // Site is still unlocked, do nothing
@@ -110,6 +204,8 @@ async function checkAndBlockSite() {
       });
       document.body.style.overflow = '';
     }
+    // Start periodic check for unlock expiration
+    startUnlockExpirationCheck();
     return;
   }
 
@@ -119,7 +215,8 @@ async function checkAndBlockSite() {
     return;
   }
 
-  // Site is blocked - show overlay
+  // Site is blocked - stop unlock expiration check and show overlay
+  stopUnlockExpirationCheck();
   // Increment streak if they closed the tab last time instead of unlocking
   // We track this by checking if there's no recent unlock for this site
   // Only increment if it's been a while since last unlock (they likely closed tab)
@@ -154,6 +251,8 @@ function setupUrlChangeDetection() {
     const currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
+      // Stop unlock expiration check when URL changes
+      stopUnlockExpirationCheck();
       checkAndBlockSite();
     }
   }, 500); // Check every 500ms
@@ -161,30 +260,34 @@ function setupUrlChangeDetection() {
   // Listen for popstate (back/forward button)
   window.addEventListener('popstate', () => {
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     checkAndBlockSite();
   });
-  
+
   // Intercept pushState and replaceState for SPA navigation
   const originalPushState = history.pushState;
   const originalReplaceState = history.replaceState;
-  
+
   history.pushState = function(...args) {
     originalPushState.apply(history, args);
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     // Use setTimeout to allow the page to update
     setTimeout(() => checkAndBlockSite(), 100);
   };
-  
+
   history.replaceState = function(...args) {
     originalReplaceState.apply(history, args);
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     // Use setTimeout to allow the page to update
     setTimeout(() => checkAndBlockSite(), 100);
   };
-  
+
   // Also listen for hash changes
   window.addEventListener('hashchange', () => {
     lastUrl = window.location.href;
+    stopUnlockExpirationCheck();
     checkAndBlockSite();
   });
 }
@@ -198,6 +301,11 @@ function setupUrlChangeDetection() {
   
   // Set up URL change detection
   setupUrlChangeDetection();
+  
+  // Stop unlock expiration check when page unloads
+  window.addEventListener('beforeunload', () => {
+    stopUnlockExpirationCheck();
+  });
 })();
 
 // Normalize hostname by removing www. prefix for consistent matching
@@ -816,7 +924,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   
   // Timer functionality
   const TIMER_DURATION = 15; // seconds
-  const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
+  const UNLOCK_DURATION = 1 * 60 * 1000; // 10 minutes
   
   // Focus and productivity quotes
   const focusQuotes = [
