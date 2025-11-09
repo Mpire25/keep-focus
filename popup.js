@@ -156,13 +156,6 @@ async function addSite() {
   renderBlockedList();
 }
 
-// Remove a site from the blocked list
-async function removeSite(index) {
-  blockedSites.splice(index, 1);
-  await saveData();
-  renderBlockedList();
-}
-
 // Remove a site from the blocked list by URL
 async function removeSiteByUrl(url) {
   const index = blockedSites.findIndex(siteObj => siteObj.url === url);
