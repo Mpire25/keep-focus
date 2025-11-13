@@ -91,9 +91,6 @@ async function checkAndBlockSite() {
   const isBlocked = isSiteBlocked(normalizedUrl, blockedSites);
 
   if (isBlocked) {
-    // Stop time tracking if active (regular blocking takes priority)
-    stopTimeTracking();
-    
     // Check if site is currently unlocked
     const siteKey = getSiteKey(normalizedUrl, blockedSites);
     
@@ -101,13 +98,18 @@ async function checkAndBlockSite() {
     const now = Date.now();
 
     if (unlockTimestamp && now < unlockTimestamp) {
-      // Site is still unlocked, do nothing
+      // Site is still unlocked - check time limits and track time
       // Remove overlay if it exists (in case URL changed and site is now unlocked)
       removeOverlayAndRestoreBody();
       // Start periodic check for unlock expiration
       startUnlockExpirationCheck();
+      // Check time limits for unlocked blocked sites
+      await checkTimeLimit(normalizedUrl, timeLimits, timeTracking);
       return;
     }
+    
+    // Site is blocked and not unlocked - stop time tracking
+    stopTimeTracking();
 
     // Check if overlay already exists (don't show duplicate)
     const existingOverlay = document.getElementById('keep-focus-overlay');
