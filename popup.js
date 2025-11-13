@@ -522,7 +522,8 @@ function showTimeLimitError(message) {
     errorEl = document.createElement('div');
     errorEl.id = 'timeLimitError';
     errorEl.className = 'error-message';
-    inputGroup.appendChild(errorEl);
+    // Insert after the input group, not inside it
+    inputGroup.parentNode.insertBefore(errorEl, inputGroup.nextSibling);
   }
   
   errorEl.textContent = message;
