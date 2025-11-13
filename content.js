@@ -1815,7 +1815,7 @@ async function showTimeLimitOverlay(normalizedUrl, siteKey, limitMinutes) {
   
   // Add heading
   const h2 = document.createElement('h2');
-  h2.textContent = 'You\'ve reached your time limit for this site.';
+  h2.textContent = 'You\'ve reached your time limit';
   focusCard.appendChild(h2);
   
   // Add subtitle (doesn't suggest getting more time)
