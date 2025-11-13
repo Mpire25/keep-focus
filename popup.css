@@ -178,6 +178,60 @@ header h1 {
   font-weight: 600;
 }
 
+.tabs-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tabs-header {
+  display: flex;
+  border-bottom: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  position: relative;
+  bottom: -2px;
+}
+
+.tab-button:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.tab-button.active {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
 .blocked-sites-section {
   flex: 1;
   padding: 20px;
@@ -187,13 +241,56 @@ header h1 {
   overflow: hidden;
 }
 
-.blocked-sites-section h2 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 16px;
+.screen-limits-section {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.time-limit-input {
+  width: 80px;
+  padding: 0;
+  border: 2px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--input-bg);
   color: var(--text-primary);
+  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
+  text-align: center;
   flex-shrink: 0;
-  transition: color 0.3s ease;
+}
+
+#timeLimitSiteInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
+}
+
+#timeLimitSiteInput:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+#timeLimitSiteInput.error {
+  border-color: #dc3545;
+}
+
+.time-limit-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.time-limit-input.error {
+  border-color: #dc3545;
 }
 
 .input-group {
