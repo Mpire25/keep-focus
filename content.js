@@ -560,27 +560,6 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       display: block !important;
     }
     
-    #keep-focus-overlay .streak-display {
-      margin-bottom: 24px !important;
-      padding: 12px !important;
-      background: ${darkMode ? '#252525' : '#f5f7fa'} !important;
-      border-radius: 8px !important;
-      font-size: 14px !important;
-      color: ${darkMode ? '#c0c0c0' : '#495057'} !important;
-      display: block !important;
-    }
-    
-    #keep-focus-overlay .streak-display strong {
-      color: #d4b896 !important;
-      font-weight: 600 !important;
-    }
-    
-    #keep-focus-overlay .streak-icon {
-      font-size: 18px !important;
-      margin-right: 4px !important;
-      display: inline !important;
-    }
-    
     #keep-focus-overlay h2 {
       font-size: 40px !important;
       font-weight: 700 !important;
@@ -830,17 +809,6 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const focusCard = document.createElement('div');
   focusCard.className = 'focus-card';
   
-  // Add streak display if applicable
-  if (currentStreak > 0) {
-    const streakDisplay = document.createElement('div');
-    streakDisplay.className = 'streak-display';
-    streakDisplay.innerHTML = `
-      <span class="streak-icon">🔥</span>
-      Focus streak: <strong>${currentStreak}</strong> sessions strong!
-    `;
-    focusCard.appendChild(streakDisplay);
-  }
-  
   // Add heading
   const h2 = document.createElement('h2');
   h2.textContent = 'You said you wanted to focus.';
@@ -998,10 +966,6 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     timerStarted = true;
     
     // Hide initial elements (use setProperty with 'important' to override CSS !important rules)
-    if (currentStreak > 0) {
-      const streakEl = focusCard.querySelector('.streak-display');
-      if (streakEl) streakEl.style.setProperty('display', 'none', 'important');
-    }
     h2.style.setProperty('display', 'none', 'important');
     subtitle.style.setProperty('display', 'none', 'important');
     reasonInput.style.setProperty('display', 'none', 'important');
