@@ -849,6 +849,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const timerDisplay = document.createElement('div');
   timerDisplay.id = 'timerDisplay';
   timerDisplay.className = 'timer-display';
+  // Will be set to actual timer duration when timer starts
   timerDisplay.textContent = '15';
   
   const timerLabel = document.createElement('div');
@@ -918,7 +919,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   });
   
   // Timer functionality
-  const TIMER_DURATION = 15; // seconds
+  const TIMER_DURATION = Math.floor(Math.random() * (30 - 15 + 1)) + 15; // Random between 15-30 seconds
   const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
   
   // Focus and productivity quotes
@@ -964,6 +965,10 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   function startTimer() {
     if (timerStarted) return;
     timerStarted = true;
+    
+    // Set initial timer display to the actual duration
+    timeRemaining = TIMER_DURATION;
+    timerDisplay.textContent = timeRemaining;
     
     // Hide initial elements (use setProperty with 'important' to override CSS !important rules)
     h2.style.setProperty('display', 'none', 'important');
