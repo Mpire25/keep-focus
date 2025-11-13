@@ -547,7 +547,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     
     #keep-focus-overlay .focus-blocker {
       width: 100% !important;
-      max-width: 500px !important;
+      max-width: 600px !important;
       display: block !important;
     }
     
@@ -582,12 +582,13 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }
     
     #keep-focus-overlay h2 {
-      font-size: 28px !important;
+      font-size: 40px !important;
       font-weight: 700 !important;
       margin-bottom: 12px !important;
       color: ${darkMode ? '#e0e0e0' : '#212529'} !important;
       letter-spacing: -0.5px !important;
       display: block !important;
+      white-space: nowrap !important;
     }
     
     #keep-focus-overlay .subtitle {
@@ -601,7 +602,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     #keep-focus-overlay .reason-input {
       width: 100% !important;
       padding: 14px !important;
-      border: 2px solid ${darkMode ? '#404040' : '#e9ecef'} !important;
+      border: 2px solid ${darkMode ? 'rgba(64, 64, 64, 0.3)' : 'rgba(233, 236, 239, 0.3)'} !important;
       border-radius: 8px !important;
       font-size: 14px !important;
       margin-bottom: 20px !important;
@@ -856,7 +857,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   reasonInput.type = 'text';
   reasonInput.id = 'reasonInput';
   reasonInput.className = 'reason-input';
-  reasonInput.placeholder = "Type your reason (e.g., 'Checking DMs for work')";
+  reasonInput.placeholder = "";
   reasonInput.autocomplete = 'off';
   focusCard.appendChild(reasonInput);
   
