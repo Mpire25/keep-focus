@@ -1,18 +1,21 @@
-// Popup UI for managing blocked sites
+// Standalone page UI for managing blocked sites
 
 let blockedSites = [];
 let focusStreak = 0;
+let darkMode = false;
 let timeLimits = [];
 let timeTracking = {};
 
 // Load data from storage
 async function loadData() {
   try {
-    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak', 'timeLimits', 'timeTracking']);
+    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak', 'darkMode', 'timeLimits', 'timeTracking']);
     blockedSites = result.blockedSites || [];
     focusStreak = result.focusStreak || 0;
+    darkMode = result.darkMode || false;
     timeLimits = result.timeLimits || [];
     timeTracking = result.timeTracking || {};
+    applyDarkMode();
     renderBlockedList();
     renderTimeLimitsList();
   } catch (error) {
@@ -25,7 +28,8 @@ async function saveData() {
   try {
     await chrome.storage.sync.set({
       blockedSites: blockedSites,
-      focusStreak: focusStreak
+      focusStreak: focusStreak,
+      darkMode: darkMode
     });
   } catch (error) {
     // Error saving data
@@ -44,15 +48,36 @@ async function saveTimeLimits() {
   }
 }
 
-// Open standalone extension page
-function openStandalonePage() {
-  const url = chrome.runtime.getURL('standalone.html');
-  chrome.tabs.create({ url: url });
+// Apply dark mode to the page
+function applyDarkMode() {
+  const body = document.body;
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  
+  if (darkMode) {
+    body.classList.add('dark-mode');
+    if (darkModeToggle) {
+      darkModeToggle.checked = true;
+    }
+  } else {
+    body.classList.remove('dark-mode');
+    if (darkModeToggle) {
+      darkModeToggle.checked = false;
+    }
+  }
+}
+
+// Toggle dark mode
+async function toggleDarkMode() {
+  darkMode = !darkMode;
+  applyDarkMode();
+  await chrome.storage.sync.set({ darkMode: darkMode });
 }
 
 // Render the blocked sites list
 function renderBlockedList() {
   const list = document.getElementById('blockedList');
+  
+  if (!list) return;
   
   if (blockedSites.length === 0) {
     list.innerHTML = `
@@ -86,10 +111,12 @@ function renderBlockedList() {
 
   // Add event listeners to remove buttons
   document.querySelectorAll('.btn-remove').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const url = e.target.dataset.url;
-      removeSiteByUrl(url);
-    });
+    if (!btn.dataset.type || btn.dataset.type !== 'time-limit') {
+      btn.addEventListener('click', (e) => {
+        const url = e.target.dataset.url;
+        removeSiteByUrl(url);
+      });
+    }
   });
 }
 
@@ -289,7 +316,9 @@ function clearError() {
   if (errorEl) {
     errorEl.remove();
   }
-  input.classList.remove('error');
+  if (input) {
+    input.classList.remove('error');
+  }
 }
 
 // Escape HTML to prevent XSS
@@ -546,15 +575,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
 
   const siteInput = document.getElementById('siteInput');
-  const externalLinkBtn = document.getElementById('externalLinkBtn');
+  const darkModeToggle = document.getElementById('darkModeToggle');
   
   document.getElementById('addBtn').addEventListener('click', addSite);
   document.getElementById('addTimeLimitBtn').addEventListener('click', addTimeLimit);
-  
-  // External link button
-  if (externalLinkBtn) {
-    externalLinkBtn.addEventListener('click', openStandalonePage);
-  }
   
   // Tab switching
   document.querySelectorAll('.tab-button').forEach(btn => {
@@ -562,6 +586,10 @@ document.addEventListener('DOMContentLoaded', () => {
       switchTab(btn.dataset.tab);
     });
   });
+  
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('change', toggleDarkMode);
+  }
   
   if (siteInput) {
     siteInput.addEventListener('keypress', (e) => {

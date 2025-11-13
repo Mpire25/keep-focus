@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keep Focus</title>
+  <link rel="stylesheet" href="standalone.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Permanent Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-content">
+        <div class="sidebar-header">
+          <img src="icon48.png" alt="Keep Focus" class="sidebar-icon">
+          <h1 class="sidebar-title">Keep Focus</h1>
+        </div>
+        <p class="sidebar-subtitle">Build better focus habits, one decision at a time</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div class="tabs-container">
+        <div class="tabs-header">
+          <button class="tab-button active" data-tab="settings">Settings</button>
+          <button class="tab-button" data-tab="blocked-sites">Blocked Sites</button>
+          <button class="tab-button" data-tab="screen-limits">Screen Limits</button>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content active" id="settings-tab">
+          <div class="settings-section">
+            <h2 class="section-title">Appearance</h2>
+            <div class="setting-item">
+              <label class="dark-mode-toggle-label" title="Toggle dark mode">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="toggle-icon">
+                  <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                  </svg>
+                  <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                  </svg>
+                </span>
+                <span class="toggle-label-text">Dark Mode</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Blocked Sites Tab -->
+        <div class="tab-content" id="blocked-sites-tab">
+          <div class="blocked-sites-section">
+            <div class="input-group">
+              <input 
+                type="text" 
+                id="siteInput" 
+                placeholder="Add domain or URL"
+                autocomplete="off"
+              >
+              <button id="addBtn" class="btn-primary">Add</button>
+            </div>
+            <div class="block-option">
+              <label class="checkbox-label">
+                <input type="checkbox" id="blockChildrenCheckbox" checked>
+                <span>Block all subpages/children pages</span>
+              </label>
+            </div>
+            
+            <ul id="blockedList" class="blocked-list">
+              <!-- Sites will be dynamically added here -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Screen Limits Tab -->
+        <div class="tab-content" id="screen-limits-tab">
+          <div class="screen-limits-section">
+            <div class="input-group">
+              <input 
+                type="text" 
+                id="timeLimitSiteInput" 
+                placeholder="Add domain or URL"
+                autocomplete="off"
+              >
+              <input 
+                type="number" 
+                id="timeLimitMinutesInput" 
+                placeholder="Minutes"
+                min="1"
+                autocomplete="off"
+                class="time-limit-input"
+              >
+              <button id="addTimeLimitBtn" class="btn-primary">Add</button>
+            </div>
+            
+            <ul id="timeLimitsList" class="blocked-list">
+              <!-- Time limits will be dynamically added here -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="standalone.js"></script>
+</body>
+</html>
+
