@@ -594,7 +594,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     
     #keep-focus-overlay .reason-input:focus {
       outline: none !important;
-      border-color: #d4b896 !important;
+      border-color: ${darkMode ? 'rgba(64, 64, 64, 0.3)' : 'rgba(233, 236, 239, 0.3)'} !important;
     }
     
     #keep-focus-overlay .reason-input:disabled {
