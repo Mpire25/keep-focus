@@ -52,48 +52,58 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   width: 100%;
   height: 100vh;
-  background: var(--bg-primary);
+  background: #f0ede6;
   color: var(--text-primary);
   overflow: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
 .app-container {
   display: flex;
   width: 100%;
-  height: 100vh;
+  max-width: 1100px;
+  height: 100%;
+  max-height: 800px;
   overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  background: var(--bg-secondary);
 }
 
 /* Sidebar Styles */
 .sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
+  position: relative;
   width: 250px;
-  height: 100vh;
+  height: 100%;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
   border-right: 1px solid var(--border-color);
   transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-  z-index: 100;
   overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
 }
 
 .sidebar-content {
   padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  height: 100%;
 }
 
 .sidebar-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 16px;
+  justify-content: center;
 }
 
 .sidebar-icon {
@@ -113,18 +123,62 @@ body {
   opacity: 0.9;
   font-weight: 400;
   line-height: 1.5;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.sidebar-nav {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-tab-button {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  text-align: left;
+  border-radius: 4px;
+  opacity: 0.8;
+}
+
+.sidebar-tab-button:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .sidebar-tab-button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-tab-button.active {
+  opacity: 1;
+  color: var(--accent-color);
+  border-left-color: var(--accent-color);
+  font-weight: 600;
+  background-color: rgba(212, 184, 150, 0.1);
 }
 
 /* Main Content Area */
 .main-content {
-  margin-left: 250px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   background: var(--bg-secondary);
   transition: background-color 0.3s ease;
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 
 .tabs-container {
@@ -133,40 +187,6 @@ body {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-}
-
-.tabs-header {
-  display: flex;
-  border-bottom: 2px solid var(--border-color);
-  background: var(--bg-secondary);
-  transition: border-color 0.3s ease, background-color 0.3s ease;
-  padding: 0 24px;
-}
-
-.tab-button {
-  padding: 16px 24px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-  position: relative;
-  bottom: -2px;
-}
-
-.tab-button:hover {
-  color: var(--text-primary);
-  background: var(--bg-tertiary);
-}
-
-.tab-button.active {
-  color: var(--accent-color);
-  border-bottom-color: var(--accent-color);
-  font-weight: 600;
 }
 
 .tab-content {
@@ -201,64 +221,74 @@ body {
   margin-bottom: 16px;
 }
 
-.dark-mode-toggle-label {
+.dark-mode-setting {
   display: flex;
   align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  user-select: none;
+  justify-content: space-between;
   padding: 12px;
   border-radius: 8px;
-  transition: background-color 0.2s ease;
-}
-
-.dark-mode-toggle-label:hover {
-  background-color: var(--bg-tertiary);
-}
-
-.dark-mode-toggle-label input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-icon {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-}
-
-.moon-icon,
-.sun-icon {
-  position: absolute;
-  transition: opacity 0.3s ease, color 0.3s ease;
-  color: var(--text-primary);
-}
-
-.moon-icon {
-  opacity: 1;
-}
-
-.sun-icon {
-  opacity: 0;
-}
-
-body.dark-mode .moon-icon {
-  opacity: 0;
-}
-
-body.dark-mode .sun-icon {
-  opacity: 1;
 }
 
 .toggle-label-text {
   font-size: 14px;
   color: var(--text-primary);
   font-weight: 500;
+}
+
+.toggle-switch-label {
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--accent-color);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 1px var(--accent-color);
 }
 
 /* Blocked Sites and Screen Limits Sections */

@@ -551,8 +551,8 @@ function clearTimeLimitError() {
 
 // Switch tabs
 function switchTab(tabName) {
-  // Update tab buttons
-  document.querySelectorAll('.tab-button').forEach(btn => {
+  // Update tab buttons (sidebar navigation)
+  document.querySelectorAll('.sidebar-tab-button').forEach(btn => {
     if (btn.dataset.tab === tabName) {
       btn.classList.add('active');
     } else {
@@ -580,8 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('addBtn').addEventListener('click', addSite);
   document.getElementById('addTimeLimitBtn').addEventListener('click', addTimeLimit);
   
-  // Tab switching
-  document.querySelectorAll('.tab-button').forEach(btn => {
+  // Tab switching (sidebar navigation)
+  document.querySelectorAll('.sidebar-tab-button').forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab);
     });
