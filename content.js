@@ -332,6 +332,11 @@ function startTimeTracking(siteKey, timeTracking) {
   // Start periodic update (every 2 seconds)
   timeTrackingInterval = setInterval(async () => {
     try {
+      // Check if tracking was stopped (timeTrackingStartTime would be null)
+      if (!timeTrackingStartTime || !currentSiteKey) {
+        return;
+      }
+      
       // Check if we're still on the same site and not on blocked page
       const currentUrl = window.location.href;
       const normalizedUrl = normalizeUrl(currentUrl);
@@ -359,9 +364,17 @@ function startTimeTracking(siteKey, timeTracking) {
       // Update time spent
       const now = Date.now();
       const elapsed = now - timeTrackingStartTime;
+      
+      // Safety check: if elapsed is unreasonably large, tracking was likely stopped
+      if (elapsed < 0 || elapsed > 10000) {
+        stopTimeTracking();
+        return;
+      }
+      
       timeTrackingStartTime = now;
       
       if (currentTimeTracking[siteKey]) {
+        const oldTimeSpent = currentTimeTracking[siteKey].timeSpent || 0;
         // Reset daily tracking if needed
         const currentDate = getCurrentDateString();
         if (currentTimeTracking[siteKey].date !== currentDate) {
@@ -371,7 +384,7 @@ function startTimeTracking(siteKey, timeTracking) {
             lastActive: now
           };
         } else {
-          currentTimeTracking[siteKey].timeSpent = (currentTimeTracking[siteKey].timeSpent || 0) + elapsed;
+          currentTimeTracking[siteKey].timeSpent = (oldTimeSpent || 0) + elapsed;
           currentTimeTracking[siteKey].lastActive = now;
         }
         
