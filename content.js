@@ -276,40 +276,22 @@ async function checkTimeLimit(normalizedUrl, timeLimits, timeTracking) {
   const tracking = timeTracking[siteKey];
   const timeSpent = tracking.timeSpent || 0;
   
-  // DEBUG: Log time limit check
-  console.log('[DEBUG] checkTimeLimit:', {
-    normalizedUrl,
-    siteKey,
-    limitMinutes: limitObj.limitMinutes,
-    limitMs,
-    timeSpent,
-    timeSpentMinutes: Math.floor(timeSpent / 60000),
-    isOverLimit: timeSpent >= limitMs,
-    remainingMs: Math.max(0, limitMs - timeSpent),
-    remainingMinutes: Math.floor(Math.max(0, limitMs - timeSpent) / 60000),
-    trackingDate: tracking.date,
-    currentDate: getCurrentDateString()
-  });
-  
   // Check if overlay already exists (don't show duplicate)
   const existingOverlay = document.getElementById('keep-focus-overlay');
   if (existingOverlay) {
     // Overlay exists - stop tracking (user is on blocked page)
-    console.log('[DEBUG] checkTimeLimit: Overlay already exists, stopping tracking');
     stopTimeTracking();
     return;
   }
   
   if (timeSpent >= limitMs) {
     // Time limit exceeded - show blocking page
-    console.log('[DEBUG] checkTimeLimit: Time limit EXCEEDED, showing overlay');
     stopTimeTracking();
     showTimeLimitOverlay(normalizedUrl, siteKey, limitObj.limitMinutes);
     return;
   }
   
   // Time limit not exceeded - start/continue tracking
-  console.log('[DEBUG] checkTimeLimit: Time limit NOT exceeded, starting/continuing tracking');
   startTimeTracking(siteKey, timeTracking);
 }
 
@@ -1367,33 +1349,6 @@ async function showTimeLimitOverlay(normalizedUrl, siteKey, limitMinutes) {
     return;
   }
   
-  // DEBUG: Log when overlay is shown
-  try {
-    const result = await chrome.storage.sync.get(['timeTracking', 'timeLimits']);
-    const timeTracking = result.timeTracking || {};
-    const timeLimits = result.timeLimits || [];
-    const limitObj = timeLimits.find(l => l.url === siteKey);
-    const limitMs = limitObj ? limitObj.limitMinutes * 60 * 1000 : 0;
-    const tracking = timeTracking[siteKey];
-    const timeSpent = tracking ? tracking.timeSpent : 0;
-    
-    console.log('[DEBUG] showTimeLimitOverlay called:', {
-      normalizedUrl,
-      siteKey,
-      limitMinutes,
-      limitMs,
-      timeSpent,
-      timeSpentMinutes: Math.floor(timeSpent / 60000),
-      isOverLimit: timeSpent >= limitMs,
-      remainingMs: Math.max(0, limitMs - timeSpent),
-      remainingMinutes: Math.floor(Math.max(0, limitMs - timeSpent) / 60000),
-      trackingDate: tracking ? tracking.date : 'N/A',
-      currentDate: getCurrentDateString()
-    });
-  } catch (error) {
-    console.error('[DEBUG] showTimeLimitOverlay - Error getting debug info:', error);
-  }
-  
   // Check if overlay already exists
   let overlay = document.getElementById('keep-focus-overlay');
   if (overlay) {
@@ -2095,17 +2050,6 @@ async function showTimeLimitOverlay(normalizedUrl, siteKey, limitMinutes) {
         const limitObj = timeLimits.find(l => l.url === siteKey);
         const limitMs = limitObj ? limitObj.limitMinutes * 60 * 1000 : 0;
         
-        // DEBUG: Log before change
-        const beforeTimeSpent = timeTracking[siteKey] ? timeTracking[siteKey].timeSpent : 0;
-        console.log('[DEBUG] Add 5 mins clicked - BEFORE:', {
-          siteKey,
-          beforeTimeSpent,
-          beforeTimeSpentMinutes: Math.floor(beforeTimeSpent / 60000),
-          limitMs,
-          limitMinutes: limitObj ? limitObj.limitMinutes : 'N/A',
-          isOverLimit: beforeTimeSpent >= limitMs
-        });
-        
         if (timeTracking[siteKey]) {
           // Give user 5 more minutes by setting timeSpent so they have 5 minutes available
           const currentDate = getCurrentDateString();
@@ -2126,38 +2070,12 @@ async function showTimeLimitOverlay(normalizedUrl, siteKey, limitMinutes) {
             timeTracking[siteKey].lastActive = Date.now();
           }
           
-          // DEBUG: Log after change
-          const afterTimeSpent = timeTracking[siteKey].timeSpent;
-          console.log('[DEBUG] Add 5 mins clicked - AFTER:', {
-            siteKey,
-            afterTimeSpent,
-            afterTimeSpentMinutes: Math.floor(afterTimeSpent / 60000),
-            limitMs,
-            limitMinutes: limitObj ? limitObj.limitMinutes : 'N/A',
-            isOverLimit: afterTimeSpent >= limitMs,
-            change: afterTimeSpent - beforeTimeSpent,
-            changeMinutes: Math.floor((afterTimeSpent - beforeTimeSpent) / 60000)
-          });
-          
           await chrome.storage.sync.set({ timeTracking });
-          
-          // DEBUG: Verify what was saved
-          const verifyResult = await chrome.storage.sync.get(['timeTracking']);
-          const verifyTimeSpent = verifyResult.timeTracking[siteKey] ? verifyResult.timeTracking[siteKey].timeSpent : 0;
-          console.log('[DEBUG] Add 5 mins clicked - VERIFIED SAVED:', {
-            siteKey,
-            savedTimeSpent: verifyTimeSpent,
-            savedTimeSpentMinutes: Math.floor(verifyTimeSpent / 60000),
-            matches: verifyTimeSpent === afterTimeSpent
-          });
-        } else {
-          console.log('[DEBUG] Add 5 mins clicked - ERROR: No timeTracking entry for siteKey:', siteKey);
         }
         
         // Reload the page to resume tracking
         window.location.reload();
       } catch (error) {
-        console.error('[DEBUG] Add 5 mins clicked - ERROR:', error);
         // Extension context invalidated - just reload the page anyway
         if (error.message && error.message.includes('Extension context invalidated')) {
           window.location.reload();
