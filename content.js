@@ -833,7 +833,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const closeTabBtnCard = document.createElement('button');
   closeTabBtnCard.id = 'closeTabBtnCard';
   closeTabBtnCard.className = 'close-tab-btn-card';
-  closeTabBtnCard.textContent = 'Stay Focused - Close Tab';
+  closeTabBtnCard.textContent = 'Close Tab';
   
   // Create small submit reason link (will be added after close tab button)
   const submitReasonLink = document.createElement('button');
@@ -898,7 +898,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const closeTabBtn = document.createElement('button');
   closeTabBtn.id = 'closeTabBtn';
   closeTabBtn.className = 'close-tab-btn';
-  closeTabBtn.textContent = 'Stay Focused - Close Tab';
+  closeTabBtn.textContent = 'Close Tab';
   overlay.appendChild(closeTabBtn);
   
   // Append overlay to body (only if not already present)
