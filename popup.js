@@ -3,16 +3,21 @@
 let blockedSites = [];
 let focusStreak = 0;
 let darkMode = false;
+let timeLimits = [];
+let timeTracking = {};
 
 // Load data from storage
 async function loadData() {
   try {
-    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak', 'darkMode']);
+    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak', 'darkMode', 'timeLimits', 'timeTracking']);
     blockedSites = result.blockedSites || [];
     focusStreak = result.focusStreak || 0;
     darkMode = result.darkMode || false;
+    timeLimits = result.timeLimits || [];
+    timeTracking = result.timeTracking || {};
     applyDarkMode();
     renderBlockedList();
+    renderTimeLimitsList();
   } catch (error) {
     // Error loading data
   }
@@ -25,6 +30,18 @@ async function saveData() {
       blockedSites: blockedSites,
       focusStreak: focusStreak,
       darkMode: darkMode
+    });
+  } catch (error) {
+    // Error saving data
+  }
+}
+
+// Save time limits to storage
+async function saveTimeLimits() {
+  try {
+    await chrome.storage.sync.set({
+      timeLimits: timeLimits,
+      timeTracking: timeTracking
     });
   } catch (error) {
     // Error saving data
@@ -305,6 +322,243 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Format time in milliseconds to readable format
+function formatTime(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  } else {
+    return `${seconds}s`;
+  }
+}
+
+// Get current date string (YYYY-MM-DD)
+function getCurrentDateString() {
+  const now = new Date();
+  return now.toISOString().split('T')[0];
+}
+
+// Reset daily tracking if date has changed
+function resetDailyTrackingIfNeeded() {
+  const currentDate = getCurrentDateString();
+  let updated = false;
+  
+  for (const siteKey in timeTracking) {
+    if (timeTracking[siteKey].date !== currentDate) {
+      timeTracking[siteKey] = {
+        date: currentDate,
+        timeSpent: 0,
+        lastActive: 0
+      };
+      updated = true;
+    }
+  }
+  
+  if (updated) {
+    saveTimeLimits();
+  }
+}
+
+// Get remaining time for a site
+function getRemainingTime(siteKey, limitMinutes) {
+  resetDailyTrackingIfNeeded();
+  
+  const tracking = timeTracking[siteKey];
+  if (!tracking || tracking.date !== getCurrentDateString()) {
+    return limitMinutes * 60 * 1000; // Return limit in milliseconds
+  }
+  
+  const limitMs = limitMinutes * 60 * 1000;
+  const remaining = Math.max(0, limitMs - tracking.timeSpent);
+  return remaining;
+}
+
+// Render the time limits list
+function renderTimeLimitsList() {
+  const list = document.getElementById('timeLimitsList');
+  
+  if (!list) return;
+  
+  resetDailyTrackingIfNeeded();
+  
+  if (timeLimits.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <p>No time limits set yet.<br>Add a site and time limit to get started!</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Sort time limits alphabetically by URL
+  const sortedLimits = [...timeLimits].sort((a, b) => {
+    return a.url.localeCompare(b.url);
+  });
+
+  list.innerHTML = sortedLimits.map((limitObj) => {
+    const site = limitObj.url;
+    const limitMinutes = limitObj.limitMinutes;
+    const remaining = getRemainingTime(site, limitMinutes);
+    const remainingFormatted = formatTime(remaining);
+    const limitFormatted = formatTime(limitMinutes * 60 * 1000);
+    const isExceeded = remaining === 0;
+    
+    return `
+    <li class="blocked-item">
+      <span class="site-url">
+        <span class="site-url-main">${escapeHtml(site)}</span>
+        <span class="site-url-mode">${limitFormatted} per day • ${isExceeded ? 'Limit reached' : remainingFormatted + ' remaining'}</span>
+      </span>
+      <button class="btn-remove" data-url="${escapeHtml(site)}" data-type="time-limit">Remove</button>
+    </li>
+  `;
+  }).join('');
+
+  // Add event listeners to remove buttons
+  document.querySelectorAll('.btn-remove[data-type="time-limit"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const url = e.target.dataset.url;
+      removeTimeLimit(url);
+    });
+  });
+}
+
+// Add a time limit
+async function addTimeLimit() {
+  const siteInput = document.getElementById('timeLimitSiteInput');
+  const minutesInput = document.getElementById('timeLimitMinutesInput');
+  const site = siteInput.value.trim();
+  const minutes = parseInt(minutesInput.value.trim(), 10);
+
+  if (!site) {
+    showTimeLimitError('Please enter a site URL.');
+    return;
+  }
+
+  if (!minutes || minutes < 1) {
+    showTimeLimitError('Please enter a valid time limit (at least 1 minute).');
+    return;
+  }
+
+  // Validate the URL/domain
+  const validationResult = validateUrl(site);
+  if (!validationResult.isValid) {
+    showTimeLimitError(validationResult.error);
+    return;
+  }
+
+  // Normalize the URL
+  const normalizedSite = normalizeUrl(site);
+  
+  // Check if site already exists
+  const siteExists = timeLimits.some(limitObj => limitObj.url === normalizedSite);
+  
+  if (siteExists) {
+    showTimeLimitError('This site already has a time limit.');
+    siteInput.value = '';
+    minutesInput.value = '';
+    return;
+  }
+
+  // Add time limit
+  const newLimit = {
+    url: normalizedSite,
+    limitMinutes: minutes
+  };
+  timeLimits.push(newLimit);
+  
+  // Initialize tracking for this site if it doesn't exist
+  const siteKey = normalizedSite;
+  if (!timeTracking[siteKey]) {
+    timeTracking[siteKey] = {
+      date: getCurrentDateString(),
+      timeSpent: 0,
+      lastActive: 0
+    };
+  }
+  
+  siteInput.value = '';
+  minutesInput.value = '';
+  clearTimeLimitError();
+  await saveTimeLimits();
+  renderTimeLimitsList();
+}
+
+// Remove a time limit
+async function removeTimeLimit(url) {
+  const index = timeLimits.findIndex(limitObj => limitObj.url === url);
+  if (index !== -1) {
+    timeLimits.splice(index, 1);
+    
+    // Also remove from timeTracking if it exists
+    if (timeTracking[url]) {
+      delete timeTracking[url];
+    }
+    
+    await saveTimeLimits();
+    renderTimeLimitsList();
+  }
+}
+
+// Show error message for time limits
+function showTimeLimitError(message) {
+  clearTimeLimitError();
+  const siteInput = document.getElementById('timeLimitSiteInput');
+  const inputGroup = siteInput.closest('.input-group');
+  
+  // Create error element if it doesn't exist
+  let errorEl = document.getElementById('timeLimitError');
+  if (!errorEl) {
+    errorEl = document.createElement('div');
+    errorEl.id = 'timeLimitError';
+    errorEl.className = 'error-message';
+    inputGroup.appendChild(errorEl);
+  }
+  
+  errorEl.textContent = message;
+  siteInput.classList.add('error');
+}
+
+// Clear error message for time limits
+function clearTimeLimitError() {
+  const siteInput = document.getElementById('timeLimitSiteInput');
+  const errorEl = document.getElementById('timeLimitError');
+  
+  if (errorEl) {
+    errorEl.remove();
+  }
+  if (siteInput) {
+    siteInput.classList.remove('error');
+  }
+}
+
+// Switch tabs
+function switchTab(tabName) {
+  // Update tab buttons
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  
+  // Update tab content
+  document.querySelectorAll('.tab-content').forEach(content => {
+    if (content.id === `${tabName}-tab`) {
+      content.classList.add('active');
+    } else {
+      content.classList.remove('active');
+    }
+  });
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
@@ -313,6 +567,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const darkModeToggle = document.getElementById('darkModeToggle');
   
   document.getElementById('addBtn').addEventListener('click', addSite);
+  document.getElementById('addTimeLimitBtn').addEventListener('click', addTimeLimit);
+  
+  // Tab switching
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchTab(btn.dataset.tab);
+    });
+  });
   
   if (darkModeToggle) {
     darkModeToggle.addEventListener('change', toggleDarkMode);
@@ -328,5 +590,33 @@ document.addEventListener('DOMContentLoaded', () => {
   siteInput.addEventListener('input', () => {
     clearError();
   });
+  
+  // Time limit inputs
+  const timeLimitSiteInput = document.getElementById('timeLimitSiteInput');
+  const timeLimitMinutesInput = document.getElementById('timeLimitMinutesInput');
+  
+  if (timeLimitSiteInput) {
+    timeLimitSiteInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addTimeLimit();
+      }
+    });
+    
+    timeLimitSiteInput.addEventListener('input', () => {
+      clearTimeLimitError();
+    });
+  }
+  
+  if (timeLimitMinutesInput) {
+    timeLimitMinutesInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addTimeLimit();
+      }
+    });
+    
+    timeLimitMinutesInput.addEventListener('input', () => {
+      clearTimeLimitError();
+    });
+  }
 });
 

@@ -32,27 +32,61 @@
       <p class="subtitle">Build better focus habits, one decision at a time</p>
     </header>
 
-    <div class="blocked-sites-section">
-      <h2>Blocked Sites</h2>
-      <div class="input-group">
-        <input 
-          type="text" 
-          id="siteInput" 
-          placeholder="Add domain or URL (e.g., twitter.com)"
-          autocomplete="off"
-        >
-        <button id="addBtn" class="btn-primary">Add</button>
+    <div class="tabs-container">
+      <div class="tabs-header">
+        <button class="tab-button active" data-tab="blocked-sites">Blocked Sites</button>
+        <button class="tab-button" data-tab="screen-limits">Screen Limits</button>
       </div>
-      <div class="block-option">
-        <label class="checkbox-label">
-          <input type="checkbox" id="blockChildrenCheckbox" checked>
-          <span>Block all subpages/children pages</span>
-        </label>
+
+      <div class="tab-content active" id="blocked-sites-tab">
+        <div class="blocked-sites-section">
+          <div class="input-group">
+            <input 
+              type="text" 
+              id="siteInput" 
+              placeholder="Add domain or URL"
+              autocomplete="off"
+            >
+            <button id="addBtn" class="btn-primary">Add</button>
+          </div>
+          <div class="block-option">
+            <label class="checkbox-label">
+              <input type="checkbox" id="blockChildrenCheckbox" checked>
+              <span>Block all subpages/children pages</span>
+            </label>
+          </div>
+          
+          <ul id="blockedList" class="blocked-list">
+            <!-- Sites will be dynamically added here -->
+          </ul>
+        </div>
       </div>
-      
-      <ul id="blockedList" class="blocked-list">
-        <!-- Sites will be dynamically added here -->
-      </ul>
+
+      <div class="tab-content" id="screen-limits-tab">
+        <div class="screen-limits-section">
+          <div class="input-group">
+            <input 
+              type="text" 
+              id="timeLimitSiteInput" 
+              placeholder="Add domain or URL"
+              autocomplete="off"
+            >
+            <input 
+              type="number" 
+              id="timeLimitMinutesInput" 
+              placeholder="Minutes"
+              min="1"
+              autocomplete="off"
+              class="time-limit-input"
+            >
+            <button id="addTimeLimitBtn" class="btn-primary">Add</button>
+          </div>
+          
+          <ul id="timeLimitsList" class="blocked-list">
+            <!-- Time limits will be dynamically added here -->
+          </ul>
+        </div>
+      </div>
     </div>
 
     <div class="footer">
