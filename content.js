@@ -159,7 +159,11 @@ async function checkAndBlockSite() {
 // Get current date string (YYYY-MM-DD)
 function getCurrentDateString() {
   const now = new Date();
-  return now.toISOString().split('T')[0];
+  // Use local date instead of UTC so reset happens at local midnight
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 // Reset daily tracking if date has changed
