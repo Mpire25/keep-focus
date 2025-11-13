@@ -452,3 +452,28 @@ body.dark-mode .streak-badge {
   transition: color 0.3s ease;
 }
 
+/* Scrollbar Styling */
+body.dark-mode ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 5px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Firefox scrollbar */
+body.dark-mode {
+  scrollbar-color: var(--border-color) var(--bg-tertiary);
+  scrollbar-width: thin;
+}
+
