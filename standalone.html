@@ -18,9 +18,9 @@
         <p class="sidebar-subtitle">Build better focus habits, one decision at a time</p>
         
         <nav class="sidebar-nav">
-          <button class="sidebar-tab-button" data-tab="blocked-sites">Blocked Sites</button>
+          <button class="sidebar-tab-button active" data-tab="blocked-sites">Blocked Sites</button>
           <button class="sidebar-tab-button" data-tab="screen-limits">Screen Limits</button>
-          <button class="sidebar-tab-button active" data-tab="settings">Settings</button>
+          <button class="sidebar-tab-button" data-tab="settings">Settings</button>
         </nav>
       </div>
     </aside>
@@ -29,27 +29,8 @@
     <main class="main-content">
       <div class="tabs-container">
 
-        <!-- Settings Tab -->
-        <div class="tab-content active" id="settings-tab">
-          <h2 class="page-title">Settings</h2>
-          <div class="settings-section">
-            <h3 class="section-title">Appearance</h3>
-            <div class="setting-item">
-              <div class="dark-mode-setting">
-                <span class="toggle-label-text">Dark Mode</span>
-                <label class="toggle-switch-label" title="Toggle dark mode">
-                  <div class="toggle-switch">
-                    <input type="checkbox" id="darkModeToggle">
-                    <span class="toggle-slider"></span>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Blocked Sites Tab -->
-        <div class="tab-content" id="blocked-sites-tab">
+        <div class="tab-content active" id="blocked-sites-tab">
           <h2 class="page-title">Blocked Sites</h2>
           <div class="blocked-sites-section">
             <div class="input-group">
@@ -99,6 +80,25 @@
             <ul id="timeLimitsList" class="blocked-list">
               <!-- Time limits will be dynamically added here -->
             </ul>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settings-tab">
+          <h2 class="page-title">Settings</h2>
+          <div class="settings-section">
+            <h3 class="section-title">Appearance</h3>
+            <div class="setting-item">
+              <div class="dark-mode-setting">
+                <span class="toggle-label-text">Dark Mode</span>
+                <label class="toggle-switch-label" title="Toggle dark mode">
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="toggle-slider"></span>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
