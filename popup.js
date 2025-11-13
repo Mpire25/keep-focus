@@ -2,17 +2,20 @@
 
 let blockedSites = [];
 let focusStreak = 0;
+let darkMode = false;
 let timeLimits = [];
 let timeTracking = {};
 
 // Load data from storage
 async function loadData() {
   try {
-    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak', 'timeLimits', 'timeTracking']);
+    const result = await chrome.storage.sync.get(['blockedSites', 'focusStreak', 'darkMode', 'timeLimits', 'timeTracking']);
     blockedSites = result.blockedSites || [];
     focusStreak = result.focusStreak || 0;
+    darkMode = result.darkMode || false;
     timeLimits = result.timeLimits || [];
     timeTracking = result.timeTracking || {};
+    applyDarkMode();
     renderBlockedList();
     renderTimeLimitsList();
   } catch (error) {
@@ -41,6 +44,17 @@ async function saveTimeLimits() {
     });
   } catch (error) {
     // Error saving data
+  }
+}
+
+// Apply dark mode to the page
+function applyDarkMode() {
+  const body = document.body;
+  
+  if (darkMode) {
+    body.classList.add('dark-mode');
+  } else {
+    body.classList.remove('dark-mode');
   }
 }
 
@@ -561,6 +575,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab);
     });
+  });
+  
+  // Listen for storage changes to update dark mode when changed in standalone page
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'sync' && changes.darkMode) {
+      darkMode = changes.darkMode.newValue || false;
+      applyDarkMode();
+    }
   });
   
   if (siteInput) {
