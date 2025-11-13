@@ -113,6 +113,10 @@ header h1 {
   letter-spacing: -0.5px;
 }
 
+body.dark-mode header h1 {
+  color: var(--accent-color);
+}
+
 .subtitle {
   font-size: 13px;
   opacity: 0.9;
