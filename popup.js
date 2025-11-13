@@ -13,7 +13,6 @@ async function loadData() {
     darkMode = result.darkMode || false;
     applyDarkMode();
     renderBlockedList();
-    updateStreakDisplay();
   } catch (error) {
     // Error loading data
   }
@@ -98,19 +97,6 @@ function renderBlockedList() {
       removeSiteByUrl(url);
     });
   });
-}
-
-// Update streak display
-function updateStreakDisplay() {
-  const streakSection = document.getElementById('streakSection');
-  const streakCount = document.getElementById('streakCount');
-  
-  if (focusStreak > 0) {
-    streakSection.style.display = 'block';
-    streakCount.textContent = focusStreak;
-  } else {
-    streakSection.style.display = 'none';
-  }
 }
 
 // Add a site to the blocked list
