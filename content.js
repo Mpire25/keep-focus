@@ -271,6 +271,21 @@ async function checkTimeLimit(normalizedUrl, timeLimits, timeTracking) {
     }
   }
   
+  // Re-read from storage to get latest data (fixes race condition with stopTimeTracking)
+  try {
+    const latestResult = await chrome.storage.sync.get(['timeTracking']);
+    const latestTimeTracking = latestResult.timeTracking || {};
+    if (latestTimeTracking[siteKey]) {
+      // Use latest data from storage instead of parameter
+      timeTracking[siteKey] = latestTimeTracking[siteKey];
+    }
+  } catch (error) {
+    // Extension context invalidated - use parameter data
+    if (error.message && error.message.includes('Extension context invalidated')) {
+      // Continue with parameter data
+    }
+  }
+  
   // Check if time limit is exceeded
   const limitMs = limitObj.limitMinutes * 60 * 1000;
   const tracking = timeTracking[siteKey];
