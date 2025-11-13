@@ -547,7 +547,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     
     #keep-focus-overlay .focus-blocker {
       width: 100% !important;
-      max-width: 500px !important;
+      max-width: 600px !important;
       display: block !important;
     }
     
@@ -560,34 +560,14 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       display: block !important;
     }
     
-    #keep-focus-overlay .streak-display {
-      margin-bottom: 24px !important;
-      padding: 12px !important;
-      background: ${darkMode ? '#252525' : '#f5f7fa'} !important;
-      border-radius: 8px !important;
-      font-size: 14px !important;
-      color: ${darkMode ? '#c0c0c0' : '#495057'} !important;
-      display: block !important;
-    }
-    
-    #keep-focus-overlay .streak-display strong {
-      color: #d4b896 !important;
-      font-weight: 600 !important;
-    }
-    
-    #keep-focus-overlay .streak-icon {
-      font-size: 18px !important;
-      margin-right: 4px !important;
-      display: inline !important;
-    }
-    
     #keep-focus-overlay h2 {
-      font-size: 28px !important;
+      font-size: 40px !important;
       font-weight: 700 !important;
       margin-bottom: 12px !important;
       color: ${darkMode ? '#e0e0e0' : '#212529'} !important;
       letter-spacing: -0.5px !important;
       display: block !important;
+      white-space: nowrap !important;
     }
     
     #keep-focus-overlay .subtitle {
@@ -601,7 +581,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     #keep-focus-overlay .reason-input {
       width: 100% !important;
       padding: 14px !important;
-      border: 2px solid ${darkMode ? '#404040' : '#e9ecef'} !important;
+      border: 2px solid ${darkMode ? 'rgba(64, 64, 64, 0.3)' : 'rgba(233, 236, 239, 0.3)'} !important;
       border-radius: 8px !important;
       font-size: 14px !important;
       margin-bottom: 20px !important;
@@ -614,7 +594,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     
     #keep-focus-overlay .reason-input:focus {
       outline: none !important;
-      border-color: #d4b896 !important;
+      border-color: ${darkMode ? 'rgba(64, 64, 64, 0.3)' : 'rgba(233, 236, 239, 0.3)'} !important;
     }
     
     #keep-focus-overlay .reason-input:disabled {
@@ -647,10 +627,10 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       display: block !important;
     }
     
-    #keep-focus-overlay .submit-reason-btn {
+    #keep-focus-overlay .close-tab-btn-card {
       width: 100% !important;
       padding: 14px 28px !important;
-      background: #d4b896 !important;
+      background: #28a745 !important;
       color: white !important;
       border: none !important;
       border-radius: 8px !important;
@@ -659,66 +639,87 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
       cursor: pointer !important;
       transition: all 0.2s !important;
       font-family: inherit !important;
-      margin-bottom: 0 !important;
+      margin-bottom: 12px !important;
       margin-top: 0 !important;
       display: block !important;
     }
     
-    #keep-focus-overlay .submit-reason-btn:hover:not(:disabled) {
-      background: #c9a883 !important;
+    #keep-focus-overlay .close-tab-btn-card:hover {
+      background: #218838 !important;
       transform: translateY(-1px) !important;
-      box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3) !important;
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3) !important;
     }
     
-    #keep-focus-overlay .submit-reason-btn:disabled {
-      background: #adb5bd !important;
-      cursor: not-allowed !important;
-      opacity: 0.6 !important;
-    }
-    
-    #keep-focus-overlay .submit-reason-btn:active:not(:disabled) {
+    #keep-focus-overlay .close-tab-btn-card:active {
       transform: translateY(0) !important;
     }
     
-    #keep-focus-overlay .submit-reason-btn.hidden {
+    #keep-focus-overlay .close-tab-btn-card.hidden {
       display: none !important;
     }
     
-    #keep-focus-overlay .unlock-btn {
+    #keep-focus-overlay .submit-reason-link {
       width: 100% !important;
-      padding: 14px 28px !important;
-      background: #d4b896 !important;
-      color: white !important;
+      padding: 0 !important;
+      background: transparent !important;
+      color: ${darkMode ? '#606060' : '#adb5bd'} !important;
       border: none !important;
-      border-radius: 8px !important;
-      font-size: 16px !important;
-      font-weight: 600 !important;
+      border-radius: 0 !important;
+      font-size: 12px !important;
+      font-weight: 400 !important;
+      cursor: pointer !important;
+      transition: all 0.2s !important;
+      font-family: inherit !important;
+      margin-bottom: 0 !important;
+      margin-top: 0 !important;
+      display: block !important;
+      text-align: center !important;
+      text-decoration: none !important;
+      opacity: 0.6 !important;
+    }
+    
+    #keep-focus-overlay .submit-reason-link:hover:not(:disabled) {
+      color: ${darkMode ? '#606060' : '#adb5bd'} !important;
+    }
+    
+    #keep-focus-overlay .submit-reason-link:disabled {
+      cursor: not-allowed !important;
+    }
+    
+    #keep-focus-overlay .submit-reason-link.hidden {
+      display: none !important;
+    }
+    
+    #keep-focus-overlay .continue-btn {
+      width: 100% !important;
+      padding: 0 !important;
+      background: transparent !important;
+      color: ${darkMode ? '#606060' : '#adb5bd'} !important;
+      border: none !important;
+      border-radius: 0 !important;
+      font-size: 12px !important;
+      font-weight: 400 !important;
       cursor: pointer !important;
       transition: all 0.2s !important;
       font-family: inherit !important;
       display: none !important;
       margin-top: 0 !important;
       margin-bottom: 0 !important;
-    }
-    
-    #keep-focus-overlay .unlock-btn.visible {
-      display: block !important;
-    }
-    
-    #keep-focus-overlay .unlock-btn:hover:not(:disabled) {
-      background: #c9a883 !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 4px 12px rgba(212, 184, 150, 0.3) !important;
-    }
-    
-    #keep-focus-overlay .unlock-btn:disabled {
-      background: #adb5bd !important;
-      cursor: not-allowed !important;
+      text-align: center !important;
+      text-decoration: none !important;
       opacity: 0.6 !important;
     }
     
-    #keep-focus-overlay .unlock-btn:active:not(:disabled) {
-      transform: translateY(0) !important;
+    #keep-focus-overlay .continue-btn.visible {
+      display: block !important;
+    }
+    
+    #keep-focus-overlay .continue-btn:hover:not(:disabled) {
+      color: ${darkMode ? '#606060' : '#adb5bd'} !important;
+    }
+    
+    #keep-focus-overlay .continue-btn:disabled {
+      cursor: not-allowed !important;
     }
     
     #keep-focus-overlay .quote-section {
@@ -808,17 +809,6 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const focusCard = document.createElement('div');
   focusCard.className = 'focus-card';
   
-  // Add streak display if applicable
-  if (currentStreak > 0) {
-    const streakDisplay = document.createElement('div');
-    streakDisplay.className = 'streak-display';
-    streakDisplay.innerHTML = `
-      <span class="streak-icon">🔥</span>
-      Focus streak: <strong>${currentStreak}</strong> sessions strong!
-    `;
-    focusCard.appendChild(streakDisplay);
-  }
-  
   // Add heading
   const h2 = document.createElement('h2');
   h2.textContent = 'You said you wanted to focus.';
@@ -835,17 +825,22 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   reasonInput.type = 'text';
   reasonInput.id = 'reasonInput';
   reasonInput.className = 'reason-input';
-  reasonInput.placeholder = "Type your reason (e.g., 'Checking DMs for work')";
+  reasonInput.placeholder = "";
   reasonInput.autocomplete = 'off';
   focusCard.appendChild(reasonInput);
   
-  // Add submit reason button
-  const submitReasonBtn = document.createElement('button');
-  submitReasonBtn.id = 'submitReasonBtn';
-  submitReasonBtn.className = 'submit-reason-btn';
-  submitReasonBtn.disabled = true;
-  submitReasonBtn.textContent = 'Submit Reason';
-  focusCard.appendChild(submitReasonBtn);
+  // Create close tab button in card (will be added after simplified view)
+  const closeTabBtnCard = document.createElement('button');
+  closeTabBtnCard.id = 'closeTabBtnCard';
+  closeTabBtnCard.className = 'close-tab-btn-card';
+  closeTabBtnCard.textContent = 'Stay Focused - Close Tab';
+  
+  // Create small submit reason link (will be added after close tab button)
+  const submitReasonLink = document.createElement('button');
+  submitReasonLink.id = 'submitReasonLink';
+  submitReasonLink.className = 'submit-reason-link';
+  submitReasonLink.disabled = true;
+  submitReasonLink.textContent = 'Submit Reason';
   
   // Add timer section (hidden initially)
   const timerSection = document.createElement('div');
@@ -854,6 +849,7 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const timerDisplay = document.createElement('div');
   timerDisplay.id = 'timerDisplay';
   timerDisplay.className = 'timer-display';
+  // Will be set to actual timer duration when timer starts
   timerDisplay.textContent = '15';
   
   const timerLabel = document.createElement('div');
@@ -881,16 +877,18 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   simplifiedView.appendChild(simplifiedQuote);
   simplifiedView.appendChild(simplifiedQuoteAuthor);
   
-  // Add unlock button before simplified view so quote appears above it
-  const unlockBtn = document.createElement('button');
-  unlockBtn.id = 'unlockBtn';
-  unlockBtn.className = 'unlock-btn';
-  unlockBtn.disabled = true;
-  unlockBtn.textContent = 'Continue';
+  // Add small continue button (replaces unlock button)
+  const continueBtn = document.createElement('button');
+  continueBtn.id = 'continueBtn';
+  continueBtn.className = 'continue-btn';
+  continueBtn.disabled = true;
+  continueBtn.textContent = 'Continue';
   
-  // Structure: simplified view -> unlock button
+  // Structure: simplified view -> close tab button -> submit reason link -> continue button
   focusCard.appendChild(simplifiedView);
-  focusCard.appendChild(unlockBtn);
+  focusCard.appendChild(closeTabBtnCard);
+  focusCard.appendChild(submitReasonLink);
+  focusCard.appendChild(continueBtn);
   
   // Assemble structure within overlay
   focusBlocker.appendChild(focusCard);
@@ -908,14 +906,20 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     body.appendChild(overlay);
   }
   
-  // Close tab button handler
+  // Close tab button handler (fixed bottom button)
   closeTabBtn.addEventListener('click', () => {
     // Redirect to Google homepage
     window.location.href = 'https://www.google.com';
   });
   
+  // Close tab button in card handler
+  closeTabBtnCard.addEventListener('click', () => {
+    // Redirect to Google homepage
+    window.location.href = 'https://www.google.com';
+  });
+  
   // Timer functionality
-  const TIMER_DURATION = 15; // seconds
+  const TIMER_DURATION = Math.floor(Math.random() * (30 - 15 + 1)) + 15; // Random between 15-30 seconds
   const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
   
   // Focus and productivity quotes
@@ -951,10 +955,10 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     return focusQuotes[Math.floor(Math.random() * focusQuotes.length)];
   }
   
-  // Check if submit reason button can be enabled
+  // Check if submit reason link can be enabled
   function checkSubmitReasonButton() {
     const reason = reasonInput.value.trim();
-    submitReasonBtn.disabled = reason.length === 0;
+    submitReasonLink.disabled = reason.length === 0;
   }
   
   // Start timer
@@ -962,15 +966,15 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     if (timerStarted) return;
     timerStarted = true;
     
+    // Set initial timer display to the actual duration
+    timeRemaining = TIMER_DURATION;
+    timerDisplay.textContent = timeRemaining;
+    
     // Hide initial elements (use setProperty with 'important' to override CSS !important rules)
-    if (currentStreak > 0) {
-      const streakEl = focusCard.querySelector('.streak-display');
-      if (streakEl) streakEl.style.setProperty('display', 'none', 'important');
-    }
     h2.style.setProperty('display', 'none', 'important');
     subtitle.style.setProperty('display', 'none', 'important');
     reasonInput.style.setProperty('display', 'none', 'important');
-    submitReasonBtn.style.setProperty('display', 'none', 'important');
+    submitReasonLink.style.setProperty('display', 'none', 'important');
     
     // Show simplified view with random quote (timer runs in background, not visible)
     const randomQuote = getRandomQuote();
@@ -992,12 +996,12 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }, 1000);
   }
   
-  // Check if unlock button can be enabled
+  // Check if continue button can be enabled
   function checkIfCanUnlock() {
     const reason = reasonInput.value.trim();
     if (timeRemaining <= 0 && reason.length > 0) {
-      unlockBtn.disabled = false;
-      unlockBtn.classList.add('visible');
+      continueBtn.disabled = false;
+      continueBtn.classList.add('visible');
     }
   }
   
@@ -1006,16 +1010,16 @@ async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     checkSubmitReasonButton();
   });
   
-  // Submit reason button handler
-  submitReasonBtn.addEventListener('click', () => {
+  // Submit reason link handler
+  submitReasonLink.addEventListener('click', () => {
     const reason = reasonInput.value.trim();
     if (reason.length > 0) {
       startTimer();
     }
   });
   
-  // Unlock button handler
-  unlockBtn.addEventListener('click', async () => {
+  // Continue button handler
+  continueBtn.addEventListener('click', async () => {
     const reason = reasonInput.value.trim();
     if (timeRemaining <= 0 && reason.length > 0) {
       try {
