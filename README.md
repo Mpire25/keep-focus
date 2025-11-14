@@ -154,15 +154,35 @@ This allows your settings to sync across Chrome installations.
 
 ### File Structure
 
+The codebase is organized into a modular structure using ES6 modules:
+
 ```
 keep-focus/
-├── manifest.json       # Extension manifest
+├── manifest.json           # Extension manifest
 ├── scripts/
 │   ├── background.js      # Background service worker (handles icon updates)
-│   ├── content.js          # Content script that blocks sites
-│   ├── popup.js            # Popup logic
-│   ├── standalone.js       # Standalone page logic
+│   ├── content.js          # Content script entry point (orchestrates modules)
+│   ├── popup.js            # Popup logic (uses shared UI modules)
+│   ├── standalone.js       # Standalone page logic (uses shared UI modules)
 │   └── dark-mode-init.js   # Dark mode initialization script
+├── content/                # Content script modules
+│   ├── blocking.js         # Main blocking logic and site checking
+│   ├── time-tracking.js    # Daily time limit tracking
+│   ├── media-control.js    # Media pausing and observer management
+│   ├── url-change-detection.js  # SPA URL change detection
+│   ├── overlay-block.js    # Block overlay UI and logic
+│   ├── overlay-time-limit.js   # Time limit overlay UI and logic
+│   ├── overlay-utils.js    # Overlay helper functions
+│   ├── overlay-styles.js   # Overlay CSS generation
+│   └── overlay-quotes.js   # Focus quotes collection
+├── utils/                  # Shared utility modules
+│   ├── url-utils.js        # URL normalization, validation, and blocking checks
+│   ├── time-utils.js       # Time formatting and date utilities
+│   ├── storage-utils.js    # Chrome storage API wrappers
+│   └── html-utils.js       # HTML escaping utilities
+├── ui/                     # Shared UI modules
+│   ├── list-renderer.js    # List rendering for popup and standalone
+│   └── form-handlers.js    # Form handling utilities
 ├── pages/
 │   ├── popup.html          # Popup UI
 │   └── standalone.html     # Standalone full-page interface
@@ -172,19 +192,29 @@ keep-focus/
 │   └── standalone.css      # Standalone page styles
 ├── icons/
 │   ├── icon16.png          # Extension icon (16x16, light mode)
-│   ├── icon16-dark.png     # Extension icon (16x16, dark mode)
-│   ├── icon32.png          # Extension icon (32x32, light mode)
-│   ├── icon32-dark.png     # Extension icon (32x32, dark mode)
-│   ├── icon48.png          # Extension icon (48x48, light mode)
-│   ├── icon48-dark.png     # Extension icon (48x48, dark mode)
-│   ├── icon96.png          # Extension icon (96x96, light mode)
-│   ├── icon96-dark.png     # Extension icon (96x96, dark mode)
-│   ├── icon128.png         # Extension icon (128x128, light mode)
-│   ├── icon128-dark.png    # Extension icon (128x128, dark mode)
-│   ├── icon256.png         # Extension icon (256x256, light mode)
-│   └── icon256-dark.png    # Extension icon (256x256, dark mode)
-└── README.md           # This file
+│   ├── icon16-dark.png    # Extension icon (16x16, dark mode)
+│   ├── icon32.png         # Extension icon (32x32, light mode)
+│   ├── icon32-dark.png    # Extension icon (32x32, dark mode)
+│   ├── icon48.png         # Extension icon (48x48, light mode)
+│   ├── icon48-dark.png    # Extension icon (48x48, dark mode)
+│   ├── icon96.png         # Extension icon (96x96, light mode)
+│   ├── icon96-dark.png    # Extension icon (96x96, dark mode)
+│   ├── icon128.png        # Extension icon (128x128, light mode)
+│   ├── icon128-dark.png   # Extension icon (128x128, dark mode)
+│   ├── icon256.png        # Extension icon (256x256, light mode)
+│   └── icon256-dark.png   # Extension icon (256x256, dark mode)
+└── README.md               # This file
 ```
+
+### Architecture
+
+The extension uses a modular ES6 architecture:
+
+- **Entry Points**: `scripts/content.js`, `scripts/popup.js`, `scripts/standalone.js` serve as entry points that import and orchestrate modular components
+- **Content Modules** (`content/`): Handle site blocking, time tracking, overlays, and media control
+- **Utilities** (`utils/`): Shared functions for URL handling, time formatting, storage operations, and HTML escaping
+- **UI Modules** (`ui/`): Shared UI logic for list rendering and form handling used by both popup and standalone pages
+- **Benefits**: Improved maintainability, reduced code duplication, easier testing, and preparation for TypeScript migration
 
 ## 🎨 Design Philosophy
 
