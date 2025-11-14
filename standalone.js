@@ -48,6 +48,40 @@ async function saveTimeLimits() {
   }
 }
 
+// Update extension icon based on dark mode
+async function updateExtensionIcon(isDarkMode) {
+  try {
+    const iconSizes = [16, 48, 128];
+    const iconPaths = {};
+    
+    iconSizes.forEach(size => {
+      iconPaths[size] = isDarkMode 
+        ? `icon${size}-dark.png` 
+        : `icon${size}.png`;
+    });
+    
+    await chrome.action.setIcon({ path: iconPaths });
+  } catch (error) {
+    // If dark mode icons don't exist, fall back to regular icons
+    // This allows the extension to work even without dark mode icon files
+  }
+}
+
+// Update page icons (favicon and sidebar icon) based on dark mode
+function updatePageIcons(isDarkMode) {
+  // Update favicon
+  const favicon = document.getElementById('favicon');
+  if (favicon) {
+    favicon.href = isDarkMode ? 'icon16-dark.png' : 'icon16.png';
+  }
+  
+  // Update sidebar icon
+  const sidebarIcon = document.getElementById('sidebarIcon');
+  if (sidebarIcon) {
+    sidebarIcon.src = isDarkMode ? 'icon48-dark.png' : 'icon48.png';
+  }
+}
+
 // Apply dark mode to the page
 function applyDarkMode() {
   const body = document.body;
@@ -64,12 +98,18 @@ function applyDarkMode() {
       darkModeToggle.checked = false;
     }
   }
+  
+  // Update extension icon when dark mode is applied
+  updateExtensionIcon(darkMode);
+  
+  // Update page icons (favicon and sidebar icon)
+  updatePageIcons(darkMode);
 }
 
 // Toggle dark mode
 async function toggleDarkMode() {
   darkMode = !darkMode;
-  applyDarkMode();
+  applyDarkMode(); // This will also update the icon
   await chrome.storage.sync.set({ darkMode: darkMode });
 }
 

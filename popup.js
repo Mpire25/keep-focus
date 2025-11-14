@@ -47,6 +47,25 @@ async function saveTimeLimits() {
   }
 }
 
+// Update extension icon based on dark mode
+async function updateExtensionIcon(isDarkMode) {
+  try {
+    const iconSizes = [16, 48, 128];
+    const iconPaths = {};
+    
+    iconSizes.forEach(size => {
+      iconPaths[size] = isDarkMode 
+        ? `icon${size}-dark.png` 
+        : `icon${size}.png`;
+    });
+    
+    await chrome.action.setIcon({ path: iconPaths });
+  } catch (error) {
+    // If dark mode icons don't exist, fall back to regular icons
+    // This allows the extension to work even without dark mode icon files
+  }
+}
+
 // Apply dark mode to the page
 function applyDarkMode() {
   const body = document.body;
@@ -56,6 +75,9 @@ function applyDarkMode() {
   } else {
     body.classList.remove('dark-mode');
   }
+  
+  // Update extension icon when dark mode is applied
+  updateExtensionIcon(darkMode);
 }
 
 // Open standalone extension page
@@ -581,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'sync' && changes.darkMode) {
       darkMode = changes.darkMode.newValue || false;
-      applyDarkMode();
+      applyDarkMode(); // This will also update the icon
     }
   });
   
