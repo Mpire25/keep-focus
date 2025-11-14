@@ -41,6 +41,15 @@
     "96": "icons/icon96.png",
     "128": "icons/icon128.png",
     "256": "icons/icon256.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content/*.js",
+        "utils/*.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
 
