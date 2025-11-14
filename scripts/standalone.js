@@ -56,8 +56,8 @@ async function updateExtensionIcon(isDarkMode) {
     
     iconSizes.forEach(size => {
       iconPaths[size] = isDarkMode 
-        ? `icon${size}-dark.png` 
-        : `icon${size}.png`;
+        ? `icons/icon${size}-dark.png` 
+        : `icons/icon${size}.png`;
     });
     
     await chrome.action.setIcon({ path: iconPaths });
@@ -72,14 +72,14 @@ function updatePageIcons(isDarkMode) {
   // Update favicon - use 32x32 for better quality on high-DPI displays
   const favicon = document.getElementById('favicon');
   if (favicon) {
-    favicon.href = isDarkMode ? 'icon32-dark.png' : 'icon32.png';
+    favicon.href = isDarkMode ? '../icons/icon32-dark.png' : '../icons/icon32.png';
   }
   
   // Update sidebar icon - use 96x96 for better quality on high-DPI displays
   // CSS will scale it down to 48px, but the higher resolution ensures crispness
   const sidebarIcon = document.getElementById('sidebarIcon');
   if (sidebarIcon) {
-    sidebarIcon.src = isDarkMode ? 'icon96-dark.png' : 'icon96.png';
+    sidebarIcon.src = isDarkMode ? '../icons/icon96-dark.png' : '../icons/icon96.png';
   }
 }
 

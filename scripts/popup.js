@@ -55,8 +55,8 @@ async function updateExtensionIcon(isDarkMode) {
     
     iconSizes.forEach(size => {
       iconPaths[size] = isDarkMode 
-        ? `icon${size}-dark.png` 
-        : `icon${size}.png`;
+        ? `icons/icon${size}-dark.png` 
+        : `icons/icon${size}.png`;
     });
     
     await chrome.action.setIcon({ path: iconPaths });
@@ -82,7 +82,7 @@ function applyDarkMode() {
 
 // Open standalone extension page
 function openStandalonePage() {
-  const url = chrome.runtime.getURL('standalone.html');
+  const url = chrome.runtime.getURL('pages/standalone.html');
   chrome.tabs.create({ url: url });
 }
 

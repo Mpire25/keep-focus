@@ -10,8 +10,8 @@ async function updateIcon(isDarkMode) {
     iconSizes.forEach(size => {
       // Use dark mode icons if available, otherwise fall back to regular icons
       iconPaths[size] = isDarkMode 
-        ? `icon${size}-dark.png` 
-        : `icon${size}.png`;
+        ? `icons/icon${size}-dark.png` 
+        : `icons/icon${size}.png`;
     });
     
     await chrome.action.setIcon({ path: iconPaths });
@@ -23,7 +23,7 @@ async function updateIcon(isDarkMode) {
         const iconSizes = [16, 32, 48, 96, 128, 256];
         const iconPaths = {};
         iconSizes.forEach(size => {
-          iconPaths[size] = `icon${size}.png`;
+          iconPaths[size] = `icons/icon${size}.png`;
         });
         await chrome.action.setIcon({ path: iconPaths });
       } catch (fallbackError) {
