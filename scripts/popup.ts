@@ -3,15 +3,16 @@
 import { getAllData, setStorageData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
+import type { BlockedSite, TimeLimit, TimeTracking } from '../types/index.js';
 
-let blockedSites = [];
+let blockedSites: BlockedSite[] = [];
 let focusStreak = 0;
 let darkMode = false;
-let timeLimits = [];
-let timeTracking = {};
+let timeLimits: TimeLimit[] = [];
+let timeTracking: TimeTracking = {};
 
 // Load data from storage
-async function loadData() {
+async function loadData(): Promise<void> {
   try {
     const result = await getAllData();
     blockedSites = result.blockedSites || [];
@@ -29,16 +30,19 @@ async function loadData() {
 }
 
 // Attach remove button listeners
-function attachRemoveListeners() {
+function attachRemoveListeners(): void {
   // Blocked sites remove buttons
   document.querySelectorAll('.btn-remove:not([data-type="time-limit"])').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const url = e.target.dataset.url;
-      const result = await removeSiteByUrl(url, blockedSites);
-      if (result.success) {
-        blockedSites = result.blockedSites;
-        renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
-        attachRemoveListeners();
+      const target = e.target as HTMLElement;
+      const url = target.dataset.url;
+      if (url) {
+        const result = await removeSiteByUrl(url, blockedSites);
+        if (result.success) {
+          blockedSites = result.blockedSites || [];
+          renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
+          attachRemoveListeners();
+        }
       }
     });
   });
@@ -46,23 +50,26 @@ function attachRemoveListeners() {
   // Time limit remove buttons
   document.querySelectorAll('.btn-remove[data-type="time-limit"]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const url = e.target.dataset.url;
-      const result = await removeTimeLimit(url, timeLimits, timeTracking);
-      if (result.success) {
-        timeLimits = result.timeLimits;
-        timeTracking = result.timeTracking;
-        renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
-        attachRemoveListeners();
+      const target = e.target as HTMLElement;
+      const url = target.dataset.url;
+      if (url) {
+        const result = await removeTimeLimit(url, timeLimits, timeTracking);
+        if (result.success) {
+          timeLimits = result.timeLimits || [];
+          timeTracking = result.timeTracking || {};
+          renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
+          attachRemoveListeners();
+        }
       }
     });
   });
 }
 
 // Update extension icon based on dark mode
-async function updateExtensionIcon(isDarkMode) {
+async function updateExtensionIcon(isDarkMode: boolean): Promise<void> {
   try {
     const iconSizes = [16, 32, 48, 96, 128, 256];
-    const iconPaths = {};
+    const iconPaths: Record<number, string> = {};
     
     iconSizes.forEach(size => {
       const relativePath = isDarkMode 
@@ -78,7 +85,7 @@ async function updateExtensionIcon(isDarkMode) {
     if (isDarkMode) {
       try {
         const iconSizes = [16, 32, 48, 96, 128, 256];
-        const iconPaths = {};
+        const iconPaths: Record<number, string> = {};
         iconSizes.forEach(size => {
           iconPaths[size] = chrome.runtime.getURL(`icons/icon${size}.png`);
         });
@@ -91,7 +98,7 @@ async function updateExtensionIcon(isDarkMode) {
 }
 
 // Apply dark mode to the page
-function applyDarkMode() {
+function applyDarkMode(): void {
   const body = document.body;
   
   if (darkMode) {
@@ -105,37 +112,37 @@ function applyDarkMode() {
 }
 
 // Open standalone extension page
-function openStandalonePage() {
+function openStandalonePage(): void {
   const url = chrome.runtime.getURL('pages/standalone.html');
   chrome.tabs.create({ url: url });
 }
 
 // Add a site to the blocked list
-async function handleAddSite() {
+async function handleAddSite(): Promise<void> {
   const result = await addSite(blockedSites);
   if (result.success) {
-    blockedSites = result.blockedSites;
+    blockedSites = result.blockedSites || [];
     renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
     attachRemoveListeners();
   }
 }
 
 // Add a time limit
-async function handleAddTimeLimit() {
+async function handleAddTimeLimit(): Promise<void> {
   const result = await addTimeLimit(timeLimits, timeTracking);
   if (result.success) {
-    timeLimits = result.timeLimits;
-    timeTracking = result.timeTracking;
+    timeLimits = result.timeLimits || [];
+    timeTracking = result.timeTracking || {};
     renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
     attachRemoveListeners();
   }
 }
 
 // Switch tabs
-function switchTab(tabName) {
+function switchTab(tabName: string): void {
   // Update tab buttons
   document.querySelectorAll('.tab-button').forEach(btn => {
-    if (btn.dataset.tab === tabName) {
+    if ((btn as HTMLElement).dataset.tab === tabName) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
@@ -174,8 +181,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const siteInput = document.getElementById('siteInput');
   const externalLinkBtn = document.getElementById('externalLinkBtn');
   
-  document.getElementById('addBtn').addEventListener('click', handleAddSite);
-  document.getElementById('addTimeLimitBtn').addEventListener('click', handleAddTimeLimit);
+  const addBtn = document.getElementById('addBtn');
+  const addTimeLimitBtn = document.getElementById('addTimeLimitBtn');
+  
+  if (addBtn) {
+    addBtn.addEventListener('click', handleAddSite);
+  }
+  if (addTimeLimitBtn) {
+    addTimeLimitBtn.addEventListener('click', handleAddTimeLimit);
+  }
   
   // External link button
   if (externalLinkBtn) {
@@ -185,14 +199,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tab switching
   document.querySelectorAll('.tab-button').forEach(btn => {
     btn.addEventListener('click', () => {
-      switchTab(btn.dataset.tab);
+      const tabName = (btn as HTMLElement).dataset.tab;
+      if (tabName) {
+        switchTab(tabName);
+      }
     });
   });
   
   // Listen for storage changes to update dark mode when changed in standalone page
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'sync' && changes.darkMode) {
-      darkMode = changes.darkMode.newValue || false;
+      darkMode = (changes.darkMode.newValue as boolean) || false;
       applyDarkMode(); // This will also update the icon
     }
   });
@@ -238,3 +255,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+

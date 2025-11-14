@@ -6,9 +6,9 @@
   'use strict';
   
   // Use dynamic imports with chrome.runtime.getURL() for proper extension URL resolution
-  const { checkAndBlockSite, stopUnlockExpirationCheck } = await import(chrome.runtime.getURL('content/blocking.js'));
-  const { setupUrlChangeDetection } = await import(chrome.runtime.getURL('content/url-change-detection.js'));
-  const { stopTimeTracking } = await import(chrome.runtime.getURL('content/time-tracking.js'));
+  const { checkAndBlockSite, stopUnlockExpirationCheck } = await import(chrome.runtime.getURL('dist/content/blocking.js'));
+  const { setupUrlChangeDetection } = await import(chrome.runtime.getURL('dist/content/url-change-detection.js'));
+  const { stopTimeTracking } = await import(chrome.runtime.getURL('dist/content/time-tracking.js'));
   
   // Run initial check
   await checkAndBlockSite();
@@ -22,3 +22,4 @@
     stopTimeTracking();
   });
 })();
+

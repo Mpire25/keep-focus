@@ -1,7 +1,9 @@
 // URL normalization and validation utilities
 
+import type { BlockedSite, TimeLimit, ValidationResult } from '../types/index.js';
+
 // Normalize hostname by removing www. prefix for consistent matching
-export function normalizeHostname(hostname) {
+export function normalizeHostname(hostname: string): string {
   if (!hostname) return hostname;
   // Remove www. prefix if present (case-insensitive)
   const normalized = hostname.toLowerCase().replace(/^www\./, '');
@@ -9,7 +11,7 @@ export function normalizeHostname(hostname) {
 }
 
 // Normalize URL for consistent matching
-export function normalizeUrl(url) {
+export function normalizeUrl(url: string): string {
   if (!url) return '';
   
   let normalized = url.trim();
@@ -45,7 +47,7 @@ export function normalizeUrl(url) {
 }
 
 // Validate URL/domain input
-export function validateUrl(url) {
+export function validateUrl(url: string): ValidationResult {
   if (!url || url.trim().length === 0) {
     return { isValid: false, error: 'Please enter a URL or domain.' };
   }
@@ -87,7 +89,7 @@ export function validateUrl(url) {
 }
 
 // Check if a site is blocked
-export function isSiteBlocked(normalizedUrl, blockedSites) {
+export function isSiteBlocked(normalizedUrl: string, blockedSites: BlockedSite[]): boolean {
   const urlParts = normalizedUrl.split('/');
   const currentHostname = urlParts[0];
   const currentPath = urlParts.slice(1).join('/');
@@ -134,7 +136,7 @@ export function isSiteBlocked(normalizedUrl, blockedSites) {
 }
 
 // Get site key for storage
-export function getSiteKey(normalizedUrl, blockedSites) {
+export function getSiteKey(normalizedUrl: string, blockedSites: BlockedSite[]): string {
   // Find the matching blocked site pattern
   const urlParts = normalizedUrl.split('/');
   const currentHostname = urlParts[0];
@@ -189,7 +191,7 @@ export function getSiteKey(normalizedUrl, blockedSites) {
 }
 
 // Get site key for time limits (similar to getSiteKey but for time limits)
-export function getTimeLimitSiteKey(normalizedUrl, timeLimits) {
+export function getTimeLimitSiteKey(normalizedUrl: string, timeLimits: TimeLimit[]): string | null {
   const urlParts = normalizedUrl.split('/');
   const currentHostname = urlParts[0];
   const currentPath = urlParts.slice(1).join('/');
@@ -227,7 +229,7 @@ export function getTimeLimitSiteKey(normalizedUrl, timeLimits) {
 }
 
 // Check if site has a time limit
-export function hasTimeLimit(normalizedUrl, timeLimits) {
+export function hasTimeLimit(normalizedUrl: string, timeLimits: TimeLimit[]): boolean {
   return getTimeLimitSiteKey(normalizedUrl, timeLimits) !== null;
 }
 

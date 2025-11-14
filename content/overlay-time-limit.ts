@@ -1,18 +1,18 @@
-// Show the blocking overlay
+// Show the time limit blocking overlay
 
 import { getStorageData, setStorageData } from '../utils/storage-utils.js';
+import { getCurrentDateString } from '../utils/time-utils.js';
 import { hideBodyContent } from './overlay-utils.js';
 import { generateOverlayStyles, getOverlayInlineStyles } from './overlay-styles.js';
 import { startMediaObserver } from './media-control.js';
 import { getRandomQuote } from './overlay-quotes.js';
+import type { TimeLimit, TimeTracking } from '../types/index.js';
 
-const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
-
-export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
+export async function showTimeLimitOverlay(normalizedUrl: string, siteKey: string, limitMinutes: number): Promise<void> {
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      showBlockOverlay(normalizedUrl, siteKey, currentStreak);
+      showTimeLimitOverlay(normalizedUrl, siteKey, limitMinutes);
     });
     return;
   }
@@ -24,18 +24,19 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   }
   
   // Get dark mode preference
-  let result;
+  let result: Record<string, unknown>;
   try {
     result = await getStorageData(['darkMode']);
   } catch (error) {
     // Extension context invalidated - use default dark mode
-    if (error.message && error.message.includes('Extension context invalidated')) {
+    const err = error as Error;
+    if (err.message && err.message.includes('Extension context invalidated')) {
       result = { darkMode: false };
     } else {
       throw error; // Re-throw other errors
     }
   }
-  const darkMode = result.darkMode || false;
+  const darkMode = (result.darkMode as boolean) || false;
   
   // Hide all existing body content without destroying it
   hideBodyContent();
@@ -52,10 +53,10 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   // Apply inline styles directly to overlay element to prevent inheritance
   overlay.style.cssText = getOverlayInlineStyles(darkMode);
   
-  // Create and inject styles
+  // Create and inject styles (reuse existing styles from showBlockOverlay)
   const style = document.createElement('style');
   style.id = 'keep-focus-styles';
-  // Only add style once
+  // Check if styles already exist
   if (!document.getElementById('keep-focus-styles')) {
     style.textContent = generateOverlayStyles(darkMode);
     document.head.appendChild(style);
@@ -73,16 +74,16 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   
   // Add heading
   const h2 = document.createElement('h2');
-  h2.textContent = 'You said you wanted to focus.';
+  h2.textContent = 'You\'ve reached your time limit';
   focusCard.appendChild(h2);
   
-  // Add subtitle
+  // Add subtitle (doesn't suggest getting more time)
   const subtitle = document.createElement('p');
   subtitle.className = 'subtitle';
-  subtitle.textContent = 'Why are you visiting this site?';
+  subtitle.textContent = 'Time to step away and refocus.';
   focusCard.appendChild(subtitle);
   
-  // Add reason input
+  // Add reason input (hidden initially)
   const reasonInput = document.createElement('input');
   reasonInput.type = 'text';
   reasonInput.id = 'reasonInput';
@@ -91,13 +92,19 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   reasonInput.autocomplete = 'off';
   focusCard.appendChild(reasonInput);
   
-  // Create close tab button in card (will be added after simplified view)
+  // Create close tab button in card
   const closeTabBtnCard = document.createElement('button');
   closeTabBtnCard.id = 'closeTabBtnCard';
   closeTabBtnCard.className = 'close-tab-btn-card';
   closeTabBtnCard.textContent = 'Close Tab';
   
-  // Create small submit reason link (will be added after close tab button)
+  // Create "More Time" button (shown initially)
+  const moreTimeBtn = document.createElement('button');
+  moreTimeBtn.id = 'moreTimeBtn';
+  moreTimeBtn.className = 'more-time-btn';
+  moreTimeBtn.textContent = 'More Time';
+  
+  // Create submit reason link (hidden initially, shown after "More Time" is clicked)
   const submitReasonLink = document.createElement('button');
   submitReasonLink.id = 'submitReasonLink';
   submitReasonLink.className = 'submit-reason-link';
@@ -111,7 +118,6 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const timerDisplay = document.createElement('div');
   timerDisplay.id = 'timerDisplay';
   timerDisplay.className = 'timer-display';
-  // Will be set to actual timer duration when timer starts
   timerDisplay.textContent = '15';
   
   const timerLabel = document.createElement('div');
@@ -139,16 +145,17 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   simplifiedView.appendChild(simplifiedQuote);
   simplifiedView.appendChild(simplifiedQuoteAuthor);
   
-  // Add small continue button (replaces unlock button)
+  // Add "Add 5 more mins" button (replaces continue button)
   const continueBtn = document.createElement('button');
   continueBtn.id = 'continueBtn';
   continueBtn.className = 'continue-btn';
   continueBtn.disabled = true;
-  continueBtn.textContent = 'Continue';
+  continueBtn.textContent = 'Add 5 more mins';
   
-  // Structure: simplified view -> close tab button -> submit reason link -> continue button
+  // Structure: simplified view -> close tab button -> more time button -> submit reason link -> continue button
   focusCard.appendChild(simplifiedView);
   focusCard.appendChild(closeTabBtnCard);
+  focusCard.appendChild(moreTimeBtn);
   focusCard.appendChild(submitReasonLink);
   focusCard.appendChild(continueBtn);
   
@@ -173,13 +180,11 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   
   // Close tab button handler (fixed bottom button)
   closeTabBtn.addEventListener('click', () => {
-    // Redirect to Google homepage
     window.location.href = 'https://www.google.com';
   });
   
   // Close tab button in card handler
   closeTabBtnCard.addEventListener('click', () => {
-    // Redirect to Google homepage
     window.location.href = 'https://www.google.com';
   });
   
@@ -187,58 +192,71 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
   const TIMER_DURATION = Math.floor(Math.random() * (30 - 15 + 1)) + 15; // Random between 15-30 seconds
   
   let timeRemaining = TIMER_DURATION;
-  let timerInterval;
+  let timerInterval: number | undefined;
   let timerStarted = false;
   
   // Check if submit reason link can be enabled
-  function checkSubmitReasonButton() {
+  function checkSubmitReasonButton(): void {
     const reason = reasonInput.value.trim();
     submitReasonLink.disabled = reason.length === 0;
   }
   
   // Start timer
-  function startTimer() {
+  function startTimer(): void {
     if (timerStarted) return;
     timerStarted = true;
     
     // Set initial timer display to the actual duration
     timeRemaining = TIMER_DURATION;
-    timerDisplay.textContent = timeRemaining;
+    timerDisplay.textContent = String(timeRemaining);
     
-    // Hide initial elements (use setProperty with 'important' to override CSS !important rules)
+    // Hide initial elements
     h2.style.setProperty('display', 'none', 'important');
     subtitle.style.setProperty('display', 'none', 'important');
     reasonInput.style.setProperty('display', 'none', 'important');
     submitReasonLink.style.setProperty('display', 'none', 'important');
+    moreTimeBtn.style.setProperty('display', 'none', 'important');
     
-    // Show simplified view with random quote (timer runs in background, not visible)
+    // Show simplified view with random quote
     const randomQuote = getRandomQuote();
     simplifiedQuote.textContent = randomQuote.text;
     simplifiedQuoteAuthor.textContent = `— ${randomQuote.author}`;
     simplifiedView.style.setProperty('display', 'block', 'important');
     simplifiedView.classList.add('visible');
     
-    // Timer runs in background (not visible)
-    timerInterval = setInterval(() => {
+    // Timer runs in background
+    timerInterval = window.setInterval(() => {
       timeRemaining--;
-      timerDisplay.textContent = timeRemaining;
+      timerDisplay.textContent = String(timeRemaining);
       
       if (timeRemaining <= 0) {
-        clearInterval(timerInterval);
+        if (timerInterval !== undefined) {
+          clearInterval(timerInterval);
+        }
         timerDisplay.textContent = '0';
-        checkIfCanUnlock();
+        checkIfCanAddTime();
       }
     }, 1000);
   }
   
-  // Check if continue button can be enabled
-  function checkIfCanUnlock() {
+  // Check if "Add 5 more mins" button can be enabled
+  function checkIfCanAddTime(): void {
     const reason = reasonInput.value.trim();
     if (timeRemaining <= 0 && reason.length > 0) {
       continueBtn.disabled = false;
       continueBtn.classList.add('visible');
     }
   }
+  
+  // "More Time" button handler
+  moreTimeBtn.addEventListener('click', () => {
+    // Hide "More Time" button
+    moreTimeBtn.classList.add('hidden');
+    // Show reason input and submit button
+    reasonInput.classList.add('visible');
+    submitReasonLink.classList.add('visible');
+    reasonInput.focus();
+  });
   
   // Reason input handler
   reasonInput.addEventListener('input', () => {
@@ -253,26 +271,49 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }
   });
   
-  // Continue button handler
+  // "Add 5 more mins" button handler
   continueBtn.addEventListener('click', async () => {
     const reason = reasonInput.value.trim();
     if (timeRemaining <= 0 && reason.length > 0) {
       try {
-        const result = await getStorageData(['unlockedUntil', 'focusStreak']);
-        const unlockedUntil = result.unlockedUntil || {};
-        unlockedUntil[siteKey] = Date.now() + UNLOCK_DURATION;
+        // Get current tracking data
+        const result = await getStorageData(['timeTracking', 'timeLimits']);
+        const timeTracking = (result.timeTracking as TimeTracking) || {};
+        const timeLimits = (result.timeLimits as TimeLimit[]) || [];
         
-        // Reset streak when user unlocks (they chose to visit)
-        await setStorageData({ 
-          unlockedUntil,
-          focusStreak: 0
-        });
+        // Find the limit for this site
+        const limitObj = timeLimits.find(l => l.url === siteKey);
+        const limitMs = limitObj ? limitObj.limitMinutes * 60 * 1000 : 0;
         
-        // Reload the page
+        if (timeTracking[siteKey]) {
+          // Give user 5 more minutes by setting timeSpent so they have 5 minutes available
+          const currentDate = getCurrentDateString();
+          const fiveMinutesMs = 5 * 60 * 1000;
+          
+          if (timeTracking[siteKey].date !== currentDate) {
+            // Reset for new day - start with 0 time spent
+            timeTracking[siteKey] = {
+              date: currentDate,
+              timeSpent: 0,
+              lastActive: Date.now()
+            };
+          } else {
+            // Set timeSpent to (limit - 5 minutes) to give them 5 minutes available
+            // If limit is less than 5 minutes, set to 0 to give them the full limit
+            const newTimeSpent = Math.max(0, limitMs - fiveMinutesMs);
+            timeTracking[siteKey].timeSpent = newTimeSpent;
+            timeTracking[siteKey].lastActive = Date.now();
+          }
+          
+          await setStorageData({ timeTracking });
+        }
+        
+        // Reload the page to resume tracking
         window.location.reload();
       } catch (error) {
         // Extension context invalidated - just reload the page anyway
-        if (error.message && error.message.includes('Extension context invalidated')) {
+        const err = error as Error;
+        if (err.message && err.message.includes('Extension context invalidated')) {
           window.location.reload();
         }
         // Other errors - ignore
@@ -280,7 +321,7 @@ export async function showBlockOverlay(normalizedUrl, siteKey, currentStreak) {
     }
   });
   
-  // Initialize submit reason button state
+  // Initialize submit reason button state (hidden initially)
   checkSubmitReasonButton();
 }
 

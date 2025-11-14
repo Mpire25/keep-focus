@@ -5,17 +5,18 @@ import { getAllData, setStorageData } from '../utils/storage-utils.js';
 import { checkTimeLimit } from './time-tracking.js';
 import { removeOverlayAndRestoreBody } from './overlay-utils.js';
 import { stopTimeTracking } from './time-tracking.js';
+import type { BlockedSite, TimeLimit, TimeTracking, UnlockedUntil } from '../types/index.js';
 
 // Global variable to track unlock expiration check interval
-let unlockExpirationCheckInterval = null;
+let unlockExpirationCheckInterval: number | null = null;
 
 // Start periodic check for unlock expiration
-export function startUnlockExpirationCheck() {
+export function startUnlockExpirationCheck(): void {
   // Clear any existing interval
   stopUnlockExpirationCheck();
   
   // Check every 30 seconds if unlock period has expired
-  unlockExpirationCheckInterval = setInterval(async () => {
+  unlockExpirationCheckInterval = window.setInterval(async () => {
     try {
       const currentUrl = window.location.href;
       const normalizedUrl = normalizeUrl(currentUrl);
@@ -45,7 +46,8 @@ export function startUnlockExpirationCheck() {
       }
     } catch (error) {
       // Extension context invalidated or other error - stop checking
-      if (error.message && error.message.includes('Extension context invalidated')) {
+      const err = error as Error;
+      if (err.message && err.message.includes('Extension context invalidated')) {
         stopUnlockExpirationCheck();
         return;
       }
@@ -55,7 +57,7 @@ export function startUnlockExpirationCheck() {
 }
 
 // Stop periodic check for unlock expiration
-export function stopUnlockExpirationCheck() {
+export function stopUnlockExpirationCheck(): void {
   if (unlockExpirationCheckInterval !== null) {
     clearInterval(unlockExpirationCheckInterval);
     unlockExpirationCheckInterval = null;
@@ -63,7 +65,7 @@ export function stopUnlockExpirationCheck() {
 }
 
 // Main function to check and block sites
-export async function checkAndBlockSite() {
+export async function checkAndBlockSite(): Promise<void> {
   'use strict';
   
   // Get current URL and normalize it
@@ -76,16 +78,17 @@ export async function checkAndBlockSite() {
     result = await getAllData();
   } catch (error) {
     // Extension context invalidated - can't check, exit silently
-    if (error.message && error.message.includes('Extension context invalidated')) {
+    const err = error as Error;
+    if (err.message && err.message.includes('Extension context invalidated')) {
       return;
     }
     throw error; // Re-throw other errors
   }
-  const blockedSites = result.blockedSites || [];
-  const unlockedUntil = result.unlockedUntil || {};
-  const focusStreak = result.focusStreak || 0;
-  const timeLimits = result.timeLimits || [];
-  const timeTracking = result.timeTracking || {};
+  const blockedSites: BlockedSite[] = result.blockedSites || [];
+  const unlockedUntil: UnlockedUntil = result.unlockedUntil || {};
+  const focusStreak: number = result.focusStreak || 0;
+  const timeLimits: TimeLimit[] = result.timeLimits || [];
+  const timeTracking: TimeTracking = result.timeTracking || {};
 
   // Check if current site is blocked (regular blocking takes priority)
   const isBlocked = isSiteBlocked(normalizedUrl, blockedSites);
@@ -136,7 +139,8 @@ export async function checkAndBlockSite() {
         await setStorageData({ focusStreak: newStreak });
       } catch (error) {
         // Extension context invalidated - ignore, continue with current streak
-        if (error.message && error.message.includes('Extension context invalidated')) {
+        const err = error as Error;
+        if (err.message && err.message.includes('Extension context invalidated')) {
           newStreak = focusStreak;
         }
       }

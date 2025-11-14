@@ -1,6 +1,6 @@
 // Shared overlay styles generation
 
-export function generateOverlayStyles(darkMode) {
+export function generateOverlayStyles(darkMode: boolean): string {
   const bgColor = darkMode ? '#1a1a1a' : '#fefdf7';
   const textColor = darkMode ? '#e0e0e0' : '#333';
   
@@ -363,7 +363,7 @@ export function generateOverlayStyles(darkMode) {
   `;
 }
 
-export function getOverlayInlineStyles(darkMode) {
+export function getOverlayInlineStyles(darkMode: boolean): string {
   const bgColor = darkMode ? '#1a1a1a' : '#fefdf7';
   const textColor = darkMode ? '#e0e0e0' : '#333';
   

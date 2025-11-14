@@ -3,15 +3,16 @@
 import { getAllData, setStorageData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
+import type { BlockedSite, TimeLimit, TimeTracking } from '../types/index.js';
 
-let blockedSites = [];
+let blockedSites: BlockedSite[] = [];
 let focusStreak = 0;
 let darkMode = false;
-let timeLimits = [];
-let timeTracking = {};
+let timeLimits: TimeLimit[] = [];
+let timeTracking: TimeTracking = {};
 
 // Load data from storage
-async function loadData() {
+async function loadData(): Promise<void> {
   try {
     const result = await getAllData();
     blockedSites = result.blockedSites || [];
@@ -29,16 +30,19 @@ async function loadData() {
 }
 
 // Attach remove button listeners
-function attachRemoveListeners() {
+function attachRemoveListeners(): void {
   // Blocked sites remove buttons
   document.querySelectorAll('.btn-remove:not([data-type="time-limit"])').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const url = e.target.dataset.url;
-      const result = await removeSiteByUrl(url, blockedSites);
-      if (result.success) {
-        blockedSites = result.blockedSites;
-        renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
-        attachRemoveListeners();
+      const target = e.target as HTMLElement;
+      const url = target.dataset.url;
+      if (url) {
+        const result = await removeSiteByUrl(url, blockedSites);
+        if (result.success) {
+          blockedSites = result.blockedSites || [];
+          renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
+          attachRemoveListeners();
+        }
       }
     });
   });
@@ -46,23 +50,26 @@ function attachRemoveListeners() {
   // Time limit remove buttons
   document.querySelectorAll('.btn-remove[data-type="time-limit"]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const url = e.target.dataset.url;
-      const result = await removeTimeLimit(url, timeLimits, timeTracking);
-      if (result.success) {
-        timeLimits = result.timeLimits;
-        timeTracking = result.timeTracking;
-        renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
-        attachRemoveListeners();
+      const target = e.target as HTMLElement;
+      const url = target.dataset.url;
+      if (url) {
+        const result = await removeTimeLimit(url, timeLimits, timeTracking);
+        if (result.success) {
+          timeLimits = result.timeLimits || [];
+          timeTracking = result.timeTracking || {};
+          renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
+          attachRemoveListeners();
+        }
       }
     });
   });
 }
 
 // Update extension icon based on dark mode
-async function updateExtensionIcon(isDarkMode) {
+async function updateExtensionIcon(isDarkMode: boolean): Promise<void> {
   try {
     const iconSizes = [16, 32, 48, 96, 128, 256];
-    const iconPaths = {};
+    const iconPaths: Record<number, string> = {};
     
     iconSizes.forEach(size => {
       const relativePath = isDarkMode 
@@ -78,7 +85,7 @@ async function updateExtensionIcon(isDarkMode) {
     if (isDarkMode) {
       try {
         const iconSizes = [16, 32, 48, 96, 128, 256];
-        const iconPaths = {};
+        const iconPaths: Record<number, string> = {};
         iconSizes.forEach(size => {
           iconPaths[size] = chrome.runtime.getURL(`icons/icon${size}.png`);
         });
@@ -91,25 +98,25 @@ async function updateExtensionIcon(isDarkMode) {
 }
 
 // Update page icons (favicon and sidebar icon) based on dark mode
-function updatePageIcons(isDarkMode) {
+function updatePageIcons(isDarkMode: boolean): void {
   // Update favicon - use 32x32 for better quality on high-DPI displays
-  const favicon = document.getElementById('favicon');
+  const favicon = document.getElementById('favicon') as HTMLLinkElement | null;
   if (favicon) {
     favicon.href = isDarkMode ? '../icons/icon32-dark.png' : '../icons/icon32.png';
   }
   
   // Update sidebar icon - use 96x96 for better quality on high-DPI displays
   // CSS will scale it down to 48px, but the higher resolution ensures crispness
-  const sidebarIcon = document.getElementById('sidebarIcon');
+  const sidebarIcon = document.getElementById('sidebarIcon') as HTMLImageElement | null;
   if (sidebarIcon) {
     sidebarIcon.src = isDarkMode ? '../icons/icon96-dark.png' : '../icons/icon96.png';
   }
 }
 
 // Apply dark mode to the page
-function applyDarkMode() {
+function applyDarkMode(): void {
   const body = document.body;
-  const darkModeToggle = document.getElementById('darkModeToggle');
+  const darkModeToggle = document.getElementById('darkModeToggle') as HTMLInputElement | null;
   
   if (darkMode) {
     body.classList.add('dark-mode');
@@ -131,38 +138,38 @@ function applyDarkMode() {
 }
 
 // Toggle dark mode
-async function toggleDarkMode() {
+async function toggleDarkMode(): Promise<void> {
   darkMode = !darkMode;
   applyDarkMode(); // This will also update the icon
   await setStorageData({ darkMode: darkMode });
 }
 
 // Add a site to the blocked list
-async function handleAddSite() {
+async function handleAddSite(): Promise<void> {
   const result = await addSite(blockedSites);
   if (result.success) {
-    blockedSites = result.blockedSites;
+    blockedSites = result.blockedSites || [];
     renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
     attachRemoveListeners();
   }
 }
 
 // Add a time limit
-async function handleAddTimeLimit() {
+async function handleAddTimeLimit(): Promise<void> {
   const result = await addTimeLimit(timeLimits, timeTracking);
   if (result.success) {
-    timeLimits = result.timeLimits;
-    timeTracking = result.timeTracking;
+    timeLimits = result.timeLimits || [];
+    timeTracking = result.timeTracking || {};
     renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
     attachRemoveListeners();
   }
 }
 
 // Switch tabs
-function switchTab(tabName) {
+function switchTab(tabName: string): void {
   // Update tab buttons (sidebar navigation)
   document.querySelectorAll('.sidebar-tab-button').forEach(btn => {
-    if (btn.dataset.tab === tabName) {
+    if ((btn as HTMLElement).dataset.tab === tabName) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
@@ -199,15 +206,25 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
 
   const siteInput = document.getElementById('siteInput');
-  const darkModeToggle = document.getElementById('darkModeToggle');
+  const darkModeToggle = document.getElementById('darkModeToggle') as HTMLInputElement | null;
   
-  document.getElementById('addBtn').addEventListener('click', handleAddSite);
-  document.getElementById('addTimeLimitBtn').addEventListener('click', handleAddTimeLimit);
+  const addBtn = document.getElementById('addBtn');
+  const addTimeLimitBtn = document.getElementById('addTimeLimitBtn');
+  
+  if (addBtn) {
+    addBtn.addEventListener('click', handleAddSite);
+  }
+  if (addTimeLimitBtn) {
+    addTimeLimitBtn.addEventListener('click', handleAddTimeLimit);
+  }
   
   // Tab switching (sidebar navigation)
   document.querySelectorAll('.sidebar-tab-button').forEach(btn => {
     btn.addEventListener('click', () => {
-      switchTab(btn.dataset.tab);
+      const tabName = (btn as HTMLElement).dataset.tab;
+      if (tabName) {
+        switchTab(tabName);
+      }
     });
   });
   
@@ -256,3 +273,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+

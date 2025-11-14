@@ -1,7 +1,9 @@
 // Time formatting and date utilities
 
+import type { TimeTracking } from '../types/index.js';
+
 // Get current date string (YYYY-MM-DD)
-export function getCurrentDateString() {
+export function getCurrentDateString(): string {
   const now = new Date();
   // Use local date instead of UTC so reset happens at local midnight
   const year = now.getFullYear();
@@ -11,7 +13,7 @@ export function getCurrentDateString() {
 }
 
 // Format time in milliseconds to readable format
-export function formatTime(ms) {
+export function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -27,7 +29,7 @@ export function formatTime(ms) {
 }
 
 // Reset daily tracking if date has changed
-export function resetDailyTrackingIfNeeded(timeTracking) {
+export function resetDailyTrackingIfNeeded(timeTracking: TimeTracking): boolean {
   const currentDate = getCurrentDateString();
   let updated = false;
   

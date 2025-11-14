@@ -3,14 +3,15 @@
 import { getTimeLimitSiteKey } from '../utils/url-utils.js';
 import { getCurrentDateString } from '../utils/time-utils.js';
 import { getStorageData, setStorageData } from '../utils/storage-utils.js';
+import type { TimeLimit, TimeTracking, TimeTrackingData } from '../types/index.js';
 
 // Global variables for time tracking
-let timeTrackingInterval = null;
-let currentSiteKey = null;
-let timeTrackingStartTime = null;
+let timeTrackingInterval: number | null = null;
+let currentSiteKey: string | null = null;
+let timeTrackingStartTime: number | null = null;
 
 // Start time tracking for a site
-export function startTimeTracking(siteKey, timeTracking) {
+export function startTimeTracking(siteKey: string, timeTracking: TimeTracking): void {
   // If already tracking this site, don't restart
   if (currentSiteKey === siteKey && timeTrackingInterval !== null) {
     return;
@@ -29,7 +30,7 @@ export function startTimeTracking(siteKey, timeTracking) {
   }
   
   // Start periodic update (every 2 seconds)
-  timeTrackingInterval = setInterval(async () => {
+  timeTrackingInterval = window.setInterval(async () => {
     try {
       // Check if tracking was stopped (timeTrackingStartTime would be null)
       if (!timeTrackingStartTime || !currentSiteKey) {
@@ -50,8 +51,8 @@ export function startTimeTracking(siteKey, timeTracking) {
       
       // Get current tracking data
       const result = await getStorageData(['timeTracking', 'timeLimits']);
-      const currentTimeTracking = result.timeTracking || {};
-      const timeLimits = result.timeLimits || [];
+      const currentTimeTracking = (result.timeTracking as TimeTracking) || {};
+      const timeLimits = (result.timeLimits as TimeLimit[]) || [];
       
       // Check if site still has time limit
       const limitSiteKey = getTimeLimitSiteKey(normalizedUrl, timeLimits);
@@ -63,7 +64,7 @@ export function startTimeTracking(siteKey, timeTracking) {
       
       // Update time spent
       const now = Date.now();
-      const elapsed = now - timeTrackingStartTime;
+      const elapsed = now - (timeTrackingStartTime || 0);
       
       // Safety check: if elapsed is unreasonably large, tracking was likely stopped
       if (elapsed < 0 || elapsed > 10000) {
@@ -97,7 +98,7 @@ export function startTimeTracking(siteKey, timeTracking) {
             stopTimeTracking();
             await setStorageData({ timeTracking: currentTimeTracking });
             // Import dynamically to avoid circular dependency
-            const { showTimeLimitOverlay } = await import('./overlay.js');
+            const { showTimeLimitOverlay } = await import('./overlay-time-limit.js');
             showTimeLimitOverlay(normalizedUrl, siteKey, limitObj.limitMinutes);
             return;
           }
@@ -108,7 +109,8 @@ export function startTimeTracking(siteKey, timeTracking) {
       }
     } catch (error) {
       // Extension context invalidated or other error - stop tracking
-      if (error.message && error.message.includes('Extension context invalidated')) {
+      const err = error as Error;
+      if (err.message && err.message.includes('Extension context invalidated')) {
         stopTimeTracking();
         return;
       }
@@ -118,7 +120,7 @@ export function startTimeTracking(siteKey, timeTracking) {
 }
 
 // Stop time tracking
-export function stopTimeTracking() {
+export function stopTimeTracking(): void {
   if (timeTrackingInterval !== null) {
     clearInterval(timeTrackingInterval);
     timeTrackingInterval = null;
@@ -128,18 +130,18 @@ export function stopTimeTracking() {
   if (currentSiteKey && timeTrackingStartTime) {
     const elapsed = Date.now() - timeTrackingStartTime;
     getStorageData(['timeTracking']).then(result => {
-      const timeTracking = result.timeTracking || {};
-      if (timeTracking[currentSiteKey]) {
+      const timeTracking = (result.timeTracking as TimeTracking) || {};
+      if (timeTracking[currentSiteKey!]) {
         const currentDate = getCurrentDateString();
-        if (timeTracking[currentSiteKey].date !== currentDate) {
-          timeTracking[currentSiteKey] = {
+        if (timeTracking[currentSiteKey!].date !== currentDate) {
+          timeTracking[currentSiteKey!] = {
             date: currentDate,
             timeSpent: elapsed,
             lastActive: Date.now()
           };
         } else {
-          timeTracking[currentSiteKey].timeSpent = (timeTracking[currentSiteKey].timeSpent || 0) + elapsed;
-          timeTracking[currentSiteKey].lastActive = Date.now();
+          timeTracking[currentSiteKey!].timeSpent = (timeTracking[currentSiteKey!].timeSpent || 0) + elapsed;
+          timeTracking[currentSiteKey!].lastActive = Date.now();
         }
         setStorageData({ timeTracking }).catch(() => {
           // Ignore errors
@@ -155,7 +157,7 @@ export function stopTimeTracking() {
 }
 
 // Check time limit and block if exceeded
-export async function checkTimeLimit(normalizedUrl, timeLimits, timeTracking) {
+export async function checkTimeLimit(normalizedUrl: string, timeLimits: TimeLimit[], timeTracking: TimeTracking): Promise<void> {
   // Check if site has a time limit
   const siteKey = getTimeLimitSiteKey(normalizedUrl, timeLimits);
   if (!siteKey) {
@@ -179,7 +181,8 @@ export async function checkTimeLimit(normalizedUrl, timeLimits, timeTracking) {
       await setStorageData({ timeTracking });
     } catch (error) {
       // Extension context invalidated - continue anyway
-      if (error.message && error.message.includes('Extension context invalidated')) {
+      const err = error as Error;
+      if (err.message && err.message.includes('Extension context invalidated')) {
         return;
       }
     }
@@ -196,7 +199,8 @@ export async function checkTimeLimit(normalizedUrl, timeLimits, timeTracking) {
       await setStorageData({ timeTracking });
     } catch (error) {
       // Extension context invalidated - continue anyway
-      if (error.message && error.message.includes('Extension context invalidated')) {
+      const err = error as Error;
+      if (err.message && err.message.includes('Extension context invalidated')) {
         return;
       }
     }
@@ -205,14 +209,15 @@ export async function checkTimeLimit(normalizedUrl, timeLimits, timeTracking) {
   // Re-read from storage to get latest data (fixes race condition with stopTimeTracking)
   try {
     const latestResult = await getStorageData(['timeTracking']);
-    const latestTimeTracking = latestResult.timeTracking || {};
+    const latestTimeTracking = (latestResult.timeTracking as TimeTracking) || {};
     if (latestTimeTracking[siteKey]) {
       // Use latest data from storage instead of parameter
       timeTracking[siteKey] = latestTimeTracking[siteKey];
     }
   } catch (error) {
     // Extension context invalidated - use parameter data
-    if (error.message && error.message.includes('Extension context invalidated')) {
+    const err = error as Error;
+    if (err.message && err.message.includes('Extension context invalidated')) {
       // Continue with parameter data
     }
   }
@@ -233,7 +238,7 @@ export async function checkTimeLimit(normalizedUrl, timeLimits, timeTracking) {
   if (timeSpent >= limitMs) {
     // Time limit exceeded - show blocking page
     stopTimeTracking();
-    const { showTimeLimitOverlay } = await import('./overlay.js');
+    const { showTimeLimitOverlay } = await import('./overlay-time-limit.js');
     showTimeLimitOverlay(normalizedUrl, siteKey, limitObj.limitMinutes);
     return;
   }

@@ -2,9 +2,10 @@
 
 import { escapeHtml } from '../utils/html-utils.js';
 import { formatTime, getCurrentDateString, resetDailyTrackingIfNeeded } from '../utils/time-utils.js';
+import type { BlockedSite, TimeLimit, TimeTracking } from '../types/index.js';
 
 // Get remaining time for a site
-function getRemainingTime(siteKey, limitMinutes, timeTracking) {
+function getRemainingTime(siteKey: string, limitMinutes: number, timeTracking: TimeTracking): number {
   resetDailyTrackingIfNeeded(timeTracking);
   
   const tracking = timeTracking[siteKey];
@@ -18,7 +19,7 @@ function getRemainingTime(siteKey, limitMinutes, timeTracking) {
 }
 
 // Update fade overlays based on scroll position
-export function updateFadeOverlays(listElement, wrapperElement) {
+export function updateFadeOverlays(listElement: HTMLElement | null, wrapperElement: HTMLElement | null): void {
   if (!listElement || !wrapperElement) return;
   
   const scrollTop = listElement.scrollTop;
@@ -51,7 +52,7 @@ export function updateFadeOverlays(listElement, wrapperElement) {
 }
 
 // Render the blocked sites list
-export function renderBlockedList(blockedSites, listId, wrapperId) {
+export function renderBlockedList(blockedSites: BlockedSite[], listId: string, wrapperId: string): void {
   const list = document.getElementById(listId);
   const wrapper = document.getElementById(wrapperId);
   
@@ -73,7 +74,7 @@ export function renderBlockedList(blockedSites, listId, wrapperId) {
     return a.url.localeCompare(b.url);
   });
 
-  list.innerHTML = sortedSites.map((siteObj, index) => {
+  list.innerHTML = sortedSites.map((siteObj) => {
     const site = siteObj.url;
     const blockChildren = siteObj.blockChildren !== false;
     const modeText = blockChildren ? 'Blocks all subpages' : 'Blocks this page only';
@@ -100,7 +101,7 @@ export function renderBlockedList(blockedSites, listId, wrapperId) {
 }
 
 // Render the time limits list
-export function renderTimeLimitsList(timeLimits, timeTracking, listId, wrapperId) {
+export function renderTimeLimitsList(timeLimits: TimeLimit[], timeTracking: TimeTracking, listId: string, wrapperId: string): void {
   const list = document.getElementById(listId);
   const wrapper = document.getElementById(wrapperId);
   

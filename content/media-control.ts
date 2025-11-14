@@ -1,10 +1,17 @@
 // Media control utilities for pausing videos and audio
 
 // Global variable to track media observer
-let mediaObserver = null;
+let mediaObserver: MutationObserver | null = null;
+
+// Extend Window interface for our custom property
+declare global {
+  interface Window {
+    _keepFocusPauseInterval?: number;
+  }
+}
 
 // Pause all video and audio elements on the page
-export function pauseAllMedia() {
+export function pauseAllMedia(): void {
   // Pause all video elements
   const videos = document.querySelectorAll('video');
   videos.forEach(video => {
@@ -32,7 +39,7 @@ export function pauseAllMedia() {
   iframes.forEach(iframe => {
     try {
       // Only access iframe content if same-origin
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      const iframeDoc = iframe.contentDocument || (iframe.contentWindow as Window | null)?.document;
       if (iframeDoc) {
         const iframeVideos = iframeDoc.querySelectorAll('video');
         iframeVideos.forEach(video => {
@@ -59,7 +66,7 @@ export function pauseAllMedia() {
 }
 
 // Start observing for new media elements and pause them
-export function startMediaObserver() {
+export function startMediaObserver(): void {
   // Stop any existing observer
   stopMediaObserver();
   
@@ -71,17 +78,19 @@ export function startMediaObserver() {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === 1) { // Element node
+          const element = node as Element;
           // Check if the added node is a media element
-          if (node.tagName === 'VIDEO' || node.tagName === 'AUDIO') {
-            if (!node.paused) {
-              node.pause();
+          if (element.tagName === 'VIDEO' || element.tagName === 'AUDIO') {
+            const mediaElement = element as HTMLVideoElement | HTMLAudioElement;
+            if (!mediaElement.paused) {
+              mediaElement.pause();
             }
-            node.removeAttribute('autoplay');
-            node.autoplay = false;
+            mediaElement.removeAttribute('autoplay');
+            mediaElement.autoplay = false;
           }
           
           // Check for media elements within the added node
-          const videos = node.querySelectorAll?.('video');
+          const videos = element.querySelectorAll?.('video');
           if (videos) {
             videos.forEach(video => {
               if (!video.paused) {
@@ -92,7 +101,7 @@ export function startMediaObserver() {
             });
           }
           
-          const audios = node.querySelectorAll?.('audio');
+          const audios = element.querySelectorAll?.('audio');
           if (audios) {
             audios.forEach(audio => {
               if (!audio.paused) {
@@ -133,7 +142,7 @@ export function startMediaObserver() {
 }
 
 // Stop observing for new media elements
-export function stopMediaObserver() {
+export function stopMediaObserver(): void {
   if (mediaObserver) {
     mediaObserver.disconnect();
     mediaObserver = null;
@@ -142,7 +151,7 @@ export function stopMediaObserver() {
   // Clear the periodic pause interval
   if (window._keepFocusPauseInterval) {
     clearInterval(window._keepFocusPauseInterval);
-    window._keepFocusPauseInterval = null;
+    window._keepFocusPauseInterval = undefined;
   }
 }
 

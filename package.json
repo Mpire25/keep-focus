@@ -1,0 +1,16 @@
+{
+  "name": "keep-focus",
+  "version": "1.0.0",
+  "description": "Block distracting websites with intentional friction. Build better focus habits, one decision at a time.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.6.3"
+  }
+}
+

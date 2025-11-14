@@ -1,11 +1,17 @@
 // URL change detection for SPAs
 
-import { checkAndBlockSite } from './blocking.js';
-import { stopUnlockExpirationCheck } from './blocking.js';
+import { checkAndBlockSite, stopUnlockExpirationCheck } from './blocking.js';
 import { stopTimeTracking } from './time-tracking.js';
 
+// Extend Window interface for our custom property
+declare global {
+  interface Window {
+    _keepFocusUrlDetectionSetup?: boolean;
+  }
+}
+
 // Set up URL change detection for SPAs
-export function setupUrlChangeDetection() {
+export function setupUrlChangeDetection(): void {
   // Prevent duplicate setup
   if (window._keepFocusUrlDetectionSetup) {
     return;
@@ -38,7 +44,7 @@ export function setupUrlChangeDetection() {
   const originalPushState = history.pushState;
   const originalReplaceState = history.replaceState;
 
-  history.pushState = function(...args) {
+  history.pushState = function(...args: Parameters<typeof history.pushState>) {
     originalPushState.apply(history, args);
     lastUrl = window.location.href;
     stopUnlockExpirationCheck();
@@ -47,7 +53,7 @@ export function setupUrlChangeDetection() {
     setTimeout(() => checkAndBlockSite(), 100);
   };
 
-  history.replaceState = function(...args) {
+  history.replaceState = function(...args: Parameters<typeof history.replaceState>) {
     originalReplaceState.apply(history, args);
     lastUrl = window.location.href;
     stopUnlockExpirationCheck();

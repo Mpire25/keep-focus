@@ -1,6 +1,11 @@
 // Focus and productivity quotes for overlays
 
-export const FOCUS_QUOTES = [
+export interface Quote {
+  text: string;
+  author: string;
+}
+
+export const FOCUS_QUOTES: Quote[] = [
   { text: '"The secret of getting ahead is getting started."', author: 'Mark Twain' },
   { text: '"Concentrate all your thoughts upon the work at hand. The sun\'s rays do not burn until brought to a focus."', author: 'Alexander Graham Bell' },
   { text: '"Focus is saying no to a thousand things."', author: 'Steve Jobs' },
@@ -23,7 +28,7 @@ export const FOCUS_QUOTES = [
   { text: '"Stay focused, go after your dreams and keep moving toward your goals."', author: 'LL Cool J' }
 ];
 
-export function getRandomQuote() {
+export function getRandomQuote(): Quote {
   return FOCUS_QUOTES[Math.floor(Math.random() * FOCUS_QUOTES.length)];
 }
 

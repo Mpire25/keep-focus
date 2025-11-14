@@ -1,7 +1,9 @@
 // Chrome storage utilities
 
+import type { ExtensionData } from '../types/index.js';
+
 // Get all extension data from storage
-export async function getAllData() {
+export async function getAllData(): Promise<ExtensionData> {
   try {
     const result = await chrome.storage.sync.get([
       'blockedSites',
@@ -21,7 +23,8 @@ export async function getAllData() {
     };
   } catch (error) {
     // Extension context invalidated or other error
-    if (error.message && error.message.includes('Extension context invalidated')) {
+    const err = error as Error;
+    if (err.message && err.message.includes('Extension context invalidated')) {
       return {
         blockedSites: [],
         unlockedUntil: {},
@@ -36,13 +39,14 @@ export async function getAllData() {
 }
 
 // Get specific data from storage
-export async function getStorageData(keys) {
+export async function getStorageData(keys: string[]): Promise<Record<string, unknown>> {
   try {
     return await chrome.storage.sync.get(keys);
   } catch (error) {
-    if (error.message && error.message.includes('Extension context invalidated')) {
+    const err = error as Error;
+    if (err.message && err.message.includes('Extension context invalidated')) {
       // Return empty defaults
-      const defaults = {};
+      const defaults: Record<string, unknown> = {};
       keys.forEach(key => {
         if (key === 'blockedSites' || key === 'timeLimits') {
           defaults[key] = [];
@@ -63,11 +67,12 @@ export async function getStorageData(keys) {
 }
 
 // Set data in storage
-export async function setStorageData(data) {
+export async function setStorageData(data: Record<string, unknown>): Promise<void> {
   try {
     await chrome.storage.sync.set(data);
   } catch (error) {
-    if (error.message && error.message.includes('Extension context invalidated')) {
+    const err = error as Error;
+    if (err.message && err.message.includes('Extension context invalidated')) {
       // Silently fail if extension context is invalidated
       return;
     }

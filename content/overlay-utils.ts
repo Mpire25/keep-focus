@@ -3,14 +3,14 @@
 import { stopMediaObserver } from './media-control.js';
 
 // Remove overlay and restore body content
-export function removeOverlayAndRestoreBody() {
+export function removeOverlayAndRestoreBody(): void {
   const existingOverlay = document.getElementById('keep-focus-overlay');
   if (existingOverlay) {
     existingOverlay.remove();
     // Restore body content
     Array.from(document.body.children).forEach(child => {
       if (child.id !== 'keep-focus-overlay') {
-        child.style.display = '';
+        (child as HTMLElement).style.display = '';
       }
     });
     document.body.style.overflow = '';
@@ -20,13 +20,13 @@ export function removeOverlayAndRestoreBody() {
 }
 
 // Hide body content to prepare for overlay
-export function hideBodyContent() {
+export function hideBodyContent(): void {
   const body = document.body;
   if (body) {
     // Hide all body children
     Array.from(body.children).forEach(child => {
       if (child.id !== 'keep-focus-overlay') {
-        child.style.display = 'none';
+        (child as HTMLElement).style.display = 'none';
       }
     });
     // Also hide any direct text nodes by wrapping content
@@ -35,7 +35,7 @@ export function hideBodyContent() {
 }
 
 // Inject overlay styles if not already present
-export async function injectOverlayStyles(darkMode) {
+export async function injectOverlayStyles(darkMode: boolean): Promise<void> {
   if (document.getElementById('keep-focus-styles')) {
     return; // Styles already injected
   }

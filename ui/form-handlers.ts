@@ -3,12 +3,13 @@
 import { validateUrl, normalizeUrl } from '../utils/url-utils.js';
 import { getCurrentDateString } from '../utils/time-utils.js';
 import { getAllData, setStorageData } from '../utils/storage-utils.js';
+import type { BlockedSite, TimeLimit, TimeTracking, FormResult, UnlockedUntil } from '../types/index.js';
 
 // Show error message
-export function showError(message, inputId = 'siteInput', errorId = 'urlError') {
+export function showError(message: string, inputId: string = 'siteInput', errorId: string = 'urlError'): void {
   clearError(inputId, errorId);
-  const input = document.getElementById(inputId);
-  const inputGroup = input?.closest('.input-group');
+  const input = document.getElementById(inputId) as HTMLInputElement | null;
+  const inputGroup = input?.closest('.input-group') as HTMLElement | null | undefined;
   
   if (!input || !inputGroup) return;
   
@@ -26,8 +27,8 @@ export function showError(message, inputId = 'siteInput', errorId = 'urlError') 
 }
 
 // Clear error message
-export function clearError(inputId = 'siteInput', errorId = 'urlError') {
-  const input = document.getElementById(inputId);
+export function clearError(inputId: string = 'siteInput', errorId: string = 'urlError'): void {
+  const input = document.getElementById(inputId) as HTMLInputElement | null;
   const errorEl = document.getElementById(errorId);
   
   if (errorEl) {
@@ -39,10 +40,10 @@ export function clearError(inputId = 'siteInput', errorId = 'urlError') {
 }
 
 // Show error message for time limits
-export function showTimeLimitError(message) {
+export function showTimeLimitError(message: string): void {
   clearTimeLimitError();
-  const siteInput = document.getElementById('timeLimitSiteInput');
-  const inputGroup = siteInput?.closest('.input-group');
+  const siteInput = document.getElementById('timeLimitSiteInput') as HTMLInputElement | null;
+  const inputGroup = siteInput?.closest('.input-group') as HTMLElement | null | undefined;
   
   if (!siteInput || !inputGroup) return;
   
@@ -53,7 +54,10 @@ export function showTimeLimitError(message) {
     errorEl.id = 'timeLimitError';
     errorEl.className = 'error-message';
     // Insert after the input group, not inside it
-    inputGroup.parentNode.insertBefore(errorEl, inputGroup.nextSibling);
+    const parent = inputGroup.parentNode;
+    if (parent) {
+      parent.insertBefore(errorEl, inputGroup.nextSibling);
+    }
   }
   
   errorEl.textContent = message;
@@ -61,8 +65,8 @@ export function showTimeLimitError(message) {
 }
 
 // Clear error message for time limits
-export function clearTimeLimitError() {
-  const siteInput = document.getElementById('timeLimitSiteInput');
+export function clearTimeLimitError(): void {
+  const siteInput = document.getElementById('timeLimitSiteInput') as HTMLInputElement | null;
   const errorEl = document.getElementById('timeLimitError');
   
   if (errorEl) {
@@ -74,10 +78,10 @@ export function clearTimeLimitError() {
 }
 
 // Add a site to the blocked list
-export async function addSite(blockedSites, siteInputId = 'siteInput', blockChildrenCheckboxId = 'blockChildrenCheckbox') {
-  const input = document.getElementById(siteInputId);
+export async function addSite(blockedSites: BlockedSite[], siteInputId: string = 'siteInput', blockChildrenCheckboxId: string = 'blockChildrenCheckbox'): Promise<FormResult> {
+  const input = document.getElementById(siteInputId) as HTMLInputElement | null;
   const site = input?.value.trim();
-  const blockChildrenCheckbox = document.getElementById(blockChildrenCheckboxId);
+  const blockChildrenCheckbox = document.getElementById(blockChildrenCheckboxId) as HTMLInputElement | null;
   const blockChildren = blockChildrenCheckbox?.checked ?? true;
 
   if (!site) {
@@ -87,7 +91,7 @@ export async function addSite(blockedSites, siteInputId = 'siteInput', blockChil
   // Validate the URL/domain
   const validationResult = validateUrl(site);
   if (!validationResult.isValid) {
-    showError(validationResult.error);
+    showError(validationResult.error || 'Invalid URL');
     return { success: false };
   }
 
@@ -99,25 +103,29 @@ export async function addSite(blockedSites, siteInputId = 'siteInput', blockChil
   
   if (siteExists) {
     showError('This site is already in your blocked list.');
-    input.value = '';
+    if (input) {
+      input.value = '';
+    }
     return { success: false };
   }
 
   // Add as object with url and blockChildren properties
-  const newSite = {
+  const newSite: BlockedSite = {
     url: normalizedSite,
     blockChildren: blockChildren
   };
   blockedSites.push(newSite);
   
-  input.value = '';
+  if (input) {
+    input.value = '';
+  }
   clearError();
   await setStorageData({ blockedSites });
   return { success: true, blockedSites };
 }
 
 // Remove a site from the blocked list by URL
-export async function removeSiteByUrl(url, blockedSites) {
+export async function removeSiteByUrl(url: string, blockedSites: BlockedSite[]): Promise<FormResult> {
   const index = blockedSites.findIndex(siteObj => siteObj.url === url);
   if (index !== -1) {
     blockedSites.splice(index, 1);
@@ -125,7 +133,7 @@ export async function removeSiteByUrl(url, blockedSites) {
     // Also remove from unlockedUntil if it exists
     try {
       const result = await getAllData();
-      const unlockedUntil = result.unlockedUntil || {};
+      const unlockedUntil: UnlockedUntil = result.unlockedUntil || {};
       let updated = false;
       
       // Remove the site from unlockedUntil if it exists (exact URL match)
@@ -158,11 +166,11 @@ export async function removeSiteByUrl(url, blockedSites) {
 }
 
 // Add a time limit
-export async function addTimeLimit(timeLimits, timeTracking, siteInputId = 'timeLimitSiteInput', minutesInputId = 'timeLimitMinutesInput') {
-  const siteInput = document.getElementById(siteInputId);
-  const minutesInput = document.getElementById(minutesInputId);
+export async function addTimeLimit(timeLimits: TimeLimit[], timeTracking: TimeTracking, siteInputId: string = 'timeLimitSiteInput', minutesInputId: string = 'timeLimitMinutesInput'): Promise<FormResult> {
+  const siteInput = document.getElementById(siteInputId) as HTMLInputElement | null;
+  const minutesInput = document.getElementById(minutesInputId) as HTMLInputElement | null;
   const site = siteInput?.value.trim();
-  const minutes = parseInt(minutesInput?.value.trim(), 10);
+  const minutes = parseInt(minutesInput?.value.trim() || '0', 10);
 
   if (!site) {
     showTimeLimitError('Please enter a site URL.');
@@ -177,7 +185,7 @@ export async function addTimeLimit(timeLimits, timeTracking, siteInputId = 'time
   // Validate the URL/domain
   const validationResult = validateUrl(site);
   if (!validationResult.isValid) {
-    showTimeLimitError(validationResult.error);
+    showTimeLimitError(validationResult.error || 'Invalid URL');
     return { success: false };
   }
 
@@ -189,13 +197,17 @@ export async function addTimeLimit(timeLimits, timeTracking, siteInputId = 'time
   
   if (siteExists) {
     showTimeLimitError('This site already has a time limit.');
-    siteInput.value = '';
-    minutesInput.value = '';
+    if (siteInput) {
+      siteInput.value = '';
+    }
+    if (minutesInput) {
+      minutesInput.value = '';
+    }
     return { success: false };
   }
 
   // Add time limit
-  const newLimit = {
+  const newLimit: TimeLimit = {
     url: normalizedSite,
     limitMinutes: minutes
   };
@@ -211,15 +223,19 @@ export async function addTimeLimit(timeLimits, timeTracking, siteInputId = 'time
     };
   }
   
-  siteInput.value = '';
-  minutesInput.value = '';
+  if (siteInput) {
+    siteInput.value = '';
+  }
+  if (minutesInput) {
+    minutesInput.value = '';
+  }
   clearTimeLimitError();
   await setStorageData({ timeLimits, timeTracking });
   return { success: true, timeLimits, timeTracking };
 }
 
 // Remove a time limit
-export async function removeTimeLimit(url, timeLimits, timeTracking) {
+export async function removeTimeLimit(url: string, timeLimits: TimeLimit[], timeTracking: TimeTracking): Promise<FormResult> {
   const index = timeLimits.findIndex(limitObj => limitObj.url === url);
   if (index !== -1) {
     timeLimits.splice(index, 1);
