@@ -1,4 +1,4 @@
-// Popup UI for managing blocked sites
+// Standalone page UI for managing blocked sites
 
 let blockedSites = [];
 let focusStreak = 0;
@@ -28,7 +28,8 @@ async function saveData() {
   try {
     await chrome.storage.sync.set({
       blockedSites: blockedSites,
-      focusStreak: focusStreak
+      focusStreak: focusStreak,
+      darkMode: darkMode
     });
   } catch (error) {
     // Error saving data
@@ -66,24 +67,51 @@ async function updateExtensionIcon(isDarkMode) {
   }
 }
 
+// Update page icons (favicon and sidebar icon) based on dark mode
+function updatePageIcons(isDarkMode) {
+  // Update favicon - use 32x32 for better quality on high-DPI displays
+  const favicon = document.getElementById('favicon');
+  if (favicon) {
+    favicon.href = isDarkMode ? 'icon32-dark.png' : 'icon32.png';
+  }
+  
+  // Update sidebar icon - use 96x96 for better quality on high-DPI displays
+  // CSS will scale it down to 48px, but the higher resolution ensures crispness
+  const sidebarIcon = document.getElementById('sidebarIcon');
+  if (sidebarIcon) {
+    sidebarIcon.src = isDarkMode ? 'icon96-dark.png' : 'icon96.png';
+  }
+}
+
 // Apply dark mode to the page
 function applyDarkMode() {
   const body = document.body;
+  const darkModeToggle = document.getElementById('darkModeToggle');
   
   if (darkMode) {
     body.classList.add('dark-mode');
+    if (darkModeToggle) {
+      darkModeToggle.checked = true;
+    }
   } else {
     body.classList.remove('dark-mode');
+    if (darkModeToggle) {
+      darkModeToggle.checked = false;
+    }
   }
   
   // Update extension icon when dark mode is applied
   updateExtensionIcon(darkMode);
+  
+  // Update page icons (favicon and sidebar icon)
+  updatePageIcons(darkMode);
 }
 
-// Open standalone extension page
-function openStandalonePage() {
-  const url = chrome.runtime.getURL('standalone.html');
-  chrome.tabs.create({ url: url });
+// Toggle dark mode
+async function toggleDarkMode() {
+  darkMode = !darkMode;
+  applyDarkMode(); // This will also update the icon
+  await chrome.storage.sync.set({ darkMode: darkMode });
 }
 
 // Update fade overlays based on scroll position
@@ -124,6 +152,8 @@ function renderBlockedList() {
   const list = document.getElementById('blockedList');
   const wrapper = document.getElementById('blockedListWrapper');
   
+  if (!list) return;
+  
   if (blockedSites.length === 0) {
     list.innerHTML = `
       <div class="empty-state">
@@ -158,10 +188,12 @@ function renderBlockedList() {
 
   // Add event listeners to remove buttons
   document.querySelectorAll('.btn-remove').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const url = e.target.dataset.url;
-      removeSiteByUrl(url);
-    });
+    if (!btn.dataset.type || btn.dataset.type !== 'time-limit') {
+      btn.addEventListener('click', (e) => {
+        const url = e.target.dataset.url;
+        removeSiteByUrl(url);
+      });
+    }
   });
   
   // Update fade overlays after rendering
@@ -370,7 +402,9 @@ function clearError() {
   if (errorEl) {
     errorEl.remove();
   }
-  input.classList.remove('error');
+  if (input) {
+    input.classList.remove('error');
+  }
 }
 
 // Escape HTML to prevent XSS
@@ -615,8 +649,8 @@ function clearTimeLimitError() {
 
 // Switch tabs
 function switchTab(tabName) {
-  // Update tab buttons
-  document.querySelectorAll('.tab-button').forEach(btn => {
+  // Update tab buttons (sidebar navigation)
+  document.querySelectorAll('.sidebar-tab-button').forEach(btn => {
     if (btn.dataset.tab === tabName) {
       btn.classList.add('active');
     } else {
@@ -654,30 +688,21 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
 
   const siteInput = document.getElementById('siteInput');
-  const externalLinkBtn = document.getElementById('externalLinkBtn');
+  const darkModeToggle = document.getElementById('darkModeToggle');
   
   document.getElementById('addBtn').addEventListener('click', addSite);
   document.getElementById('addTimeLimitBtn').addEventListener('click', addTimeLimit);
   
-  // External link button
-  if (externalLinkBtn) {
-    externalLinkBtn.addEventListener('click', openStandalonePage);
-  }
-  
-  // Tab switching
-  document.querySelectorAll('.tab-button').forEach(btn => {
+  // Tab switching (sidebar navigation)
+  document.querySelectorAll('.sidebar-tab-button').forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab);
     });
   });
   
-  // Listen for storage changes to update dark mode when changed in standalone page
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'sync' && changes.darkMode) {
-      darkMode = changes.darkMode.newValue || false;
-      applyDarkMode(); // This will also update the icon
-    }
-  });
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('change', toggleDarkMode);
+  }
   
   if (siteInput) {
     siteInput.addEventListener('keypress', (e) => {

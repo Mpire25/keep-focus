@@ -1,0 +1,359 @@
+/* ============================================
+   STANDALONE-SPECIFIC STYLES
+   ============================================ */
+
+/* Additional CSS Variables for Standalone */
+:root {
+  --sidebar-bg: var(--header-bg);
+  --sidebar-text: var(--header-text);
+  --outer-bg: #f0ede6;
+}
+
+body.dark-mode {
+  --sidebar-bg: var(--header-bg);
+  --sidebar-text: var(--header-text);
+  --outer-bg: #0f0f0f;
+}
+
+body {
+  width: 100%;
+  height: 100vh;
+  background: var(--outer-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.app-container {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  max-height: 800px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  background: var(--bg-secondary);
+}
+
+/* Sidebar Wrapper */
+.sidebar-wrapper {
+  margin-top: 24px;
+  margin-left: 24px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  position: relative;
+  width: 250px;
+  height: 100%;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 16px;
+  box-shadow: 0px 4px 4px #00000030, 0px 12px 12px #00000015;
+}
+
+.sidebar-content {
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebar-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.sidebar-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.sidebar-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+body.dark-mode .sidebar-title {
+  color: var(--accent-color);
+}
+
+.sidebar-subtitle {
+  font-size: 13px;
+  opacity: 0.9;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-bottom: 32px;
+  text-align: center;
+  position: relative;
+}
+
+.sidebar-subtitle::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #d2d2d2;
+}
+
+body.dark-mode .sidebar-subtitle::after {
+  background-color: #2a2a2a;
+}
+
+.sidebar-nav {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-tab-button {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  text-align: left;
+  border-radius: 4px;
+  opacity: 0.8;
+}
+
+.sidebar-tab-button:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .sidebar-tab-button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-tab-button.active {
+  opacity: 1;
+  color: var(--sidebar-text);
+  border-left-color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  background-color: rgba(255, 255, 255, 0.35);
+}
+
+body.dark-mode .sidebar-tab-button.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  transition: background-color 0.3s ease;
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.tabs-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 64px 32px 24px 32px;
+  margin: 0;
+  position: relative;
+}
+
+.page-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 32px;
+  right: 32px;
+  height: 1px;
+  background-color: var(--border-color);
+}
+
+/* Settings Tab */
+.settings-section {
+  flex: 1;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.setting-item {
+  margin-bottom: 16px;
+}
+
+.dark-mode-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.toggle-label-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.toggle-switch-label {
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--accent-color);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+  box-shadow: 0 0 1px var(--accent-color);
+}
+
+/* Blocked Sites and Screen Limits Sections */
+.blocked-sites-section,
+.screen-limits-section {
+  flex: 1;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Standalone-specific input overrides */
+.time-limit-input {
+  width: 100px;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+#siteInput,
+#timeLimitSiteInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.checkbox-label {
+  font-size: 13px;
+  gap: 8px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.blocked-item {
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+.btn-remove {
+  padding: 8px 16px;
+  border-radius: 6px;
+}
+
+.empty-state {
+  padding: 60px 20px;
+}
