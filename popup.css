@@ -26,6 +26,7 @@ header {
   transition: background 0.3s ease, color 0.3s ease;
   position: relative;
   border-radius: 0 0 16px 16px;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
 }
 
 .external-link-btn {

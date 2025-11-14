@@ -4,14 +4,12 @@
 
 /* Additional CSS Variables for Standalone */
 :root {
-  --header-bg: linear-gradient(135deg, #f0e6d4 0%, #ede0cc 100%);
   --sidebar-bg: var(--header-bg);
   --sidebar-text: var(--header-text);
   --outer-bg: #f0ede6;
 }
 
 body.dark-mode {
-  --header-bg: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
   --sidebar-bg: var(--header-bg);
   --sidebar-text: var(--header-text);
   --outer-bg: #0f0f0f;
@@ -40,6 +38,16 @@ body {
   background: var(--bg-secondary);
 }
 
+/* Sidebar Wrapper */
+.sidebar-wrapper {
+  margin-top: 32px;
+  margin-left: 24px;
+  margin-bottom: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+}
+
 /* Sidebar Styles */
 .sidebar {
   position: relative;
@@ -47,14 +55,11 @@ body {
   height: 100%;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
-  border-right: 1px solid var(--border-color);
   transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   overflow-y: auto;
   overflow-x: hidden;
-  flex-shrink: 0;
-  border-top-right-radius: 16px;
-  border-bottom-right-radius: 16px;
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0px 4px 4px #00000030, 0px 12px 12px #00000015;
 }
 
 .sidebar-content {
@@ -184,7 +189,17 @@ body.dark-mode .sidebar-tab-button.active {
   color: var(--text-primary);
   padding: 32px 32px 24px 32px;
   margin: 0;
-  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.page-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 32px;
+  right: 32px;
+  height: 1px;
+  background-color: var(--border-color);
 }
 
 /* Settings Tab */

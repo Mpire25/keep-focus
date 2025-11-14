@@ -20,7 +20,7 @@
   --border-color: #e9ecef;
   --accent-color: #d4b896;
   --accent-hover: #c9a883;
-  --header-bg: #f0e6d4;
+  --header-bg: linear-gradient(135deg, #f0e6d4 0%, #ede0cc 100%);;
   --header-text: #2c3e50;
   --input-bg: white;
   --input-border: #e9ecef;
@@ -41,7 +41,7 @@ body.dark-mode {
   --border-color: #404040;
   --accent-color: #d4b896;
   --accent-hover: #c9a883;
-  --header-bg: #3a3a3a;
+  --header-bg: #202020;
   --header-text: #e0e0e0;
   --input-bg: #2d2d2d;
   --input-border: #404040;
