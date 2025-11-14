@@ -157,28 +157,32 @@ This allows your settings to sync across Chrome installations.
 ```
 keep-focus/
 ├── manifest.json       # Extension manifest
-├── background.js      # Background service worker (handles icon updates)
-├── popup.html          # Popup UI
-├── popup.css           # Popup styles
-├── popup.js            # Popup logic
-├── standalone.html     # Standalone full-page interface
-├── standalone.css      # Standalone page styles
-├── standalone.js       # Standalone page logic
-├── content.js          # Content script that blocks sites
-├── shared.css          # Shared styles between popup and standalone
-├── dark-mode-init.js   # Dark mode initialization script
-├── icon16.png          # Extension icon (16x16, light mode)
-├── icon16-dark.png     # Extension icon (16x16, dark mode)
-├── icon32.png          # Extension icon (32x32, light mode)
-├── icon32-dark.png     # Extension icon (32x32, dark mode)
-├── icon48.png          # Extension icon (48x48, light mode)
-├── icon48-dark.png     # Extension icon (48x48, dark mode)
-├── icon96.png          # Extension icon (96x96, light mode)
-├── icon96-dark.png     # Extension icon (96x96, dark mode)
-├── icon128.png         # Extension icon (128x128, light mode)
-├── icon128-dark.png    # Extension icon (128x128, dark mode)
-├── icon256.png         # Extension icon (256x256, light mode)
-├── icon256-dark.png    # Extension icon (256x256, dark mode)
+├── scripts/
+│   ├── background.js      # Background service worker (handles icon updates)
+│   ├── content.js          # Content script that blocks sites
+│   ├── popup.js            # Popup logic
+│   ├── standalone.js       # Standalone page logic
+│   └── dark-mode-init.js   # Dark mode initialization script
+├── pages/
+│   ├── popup.html          # Popup UI
+│   └── standalone.html     # Standalone full-page interface
+├── styles/
+│   ├── shared.css          # Shared styles between popup and standalone
+│   ├── popup.css           # Popup styles
+│   └── standalone.css      # Standalone page styles
+├── icons/
+│   ├── icon16.png          # Extension icon (16x16, light mode)
+│   ├── icon16-dark.png     # Extension icon (16x16, dark mode)
+│   ├── icon32.png          # Extension icon (32x32, light mode)
+│   ├── icon32-dark.png     # Extension icon (32x32, dark mode)
+│   ├── icon48.png          # Extension icon (48x48, light mode)
+│   ├── icon48-dark.png     # Extension icon (48x48, dark mode)
+│   ├── icon96.png          # Extension icon (96x96, light mode)
+│   ├── icon96-dark.png     # Extension icon (96x96, dark mode)
+│   ├── icon128.png         # Extension icon (128x128, light mode)
+│   ├── icon128-dark.png    # Extension icon (128x128, dark mode)
+│   ├── icon256.png         # Extension icon (256x256, light mode)
+│   └── icon256-dark.png    # Extension icon (256x256, dark mode)
 └── README.md           # This file
 ```
 
