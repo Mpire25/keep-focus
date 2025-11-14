@@ -2,16 +2,16 @@
 // Handles dynamic icon updates based on dark mode preference
 
 // Helper function to update extension icon based on dark mode
-async function updateIcon(isDarkMode) {
+async function updateIcon(isDarkMode: boolean): Promise<void> {
   try {
     const iconSizes = [16, 32, 48, 96, 128, 256];
-    const iconPaths = {};
+    const iconPaths: Record<number, string> = {};
     
     iconSizes.forEach(size => {
       // Use dark mode icons if available, otherwise fall back to regular icons
       iconPaths[size] = isDarkMode 
-        ? `icon${size}-dark.png` 
-        : `icon${size}.png`;
+        ? `icons/icon${size}-dark.png` 
+        : `icons/icon${size}.png`;
     });
     
     await chrome.action.setIcon({ path: iconPaths });
@@ -21,9 +21,9 @@ async function updateIcon(isDarkMode) {
     if (isDarkMode) {
       try {
         const iconSizes = [16, 32, 48, 96, 128, 256];
-        const iconPaths = {};
+        const iconPaths: Record<number, string> = {};
         iconSizes.forEach(size => {
-          iconPaths[size] = `icon${size}.png`;
+          iconPaths[size] = `icons/icon${size}.png`;
         });
         await chrome.action.setIcon({ path: iconPaths });
       } catch (fallbackError) {
@@ -36,7 +36,7 @@ async function updateIcon(isDarkMode) {
 // Listen for dark mode changes in storage
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'sync' && changes.darkMode) {
-    const isDarkMode = changes.darkMode.newValue || false;
+    const isDarkMode = (changes.darkMode.newValue as boolean) || false;
     updateIcon(isDarkMode);
   }
 });
@@ -45,7 +45,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 chrome.runtime.onInstalled.addListener(async () => {
   try {
     const result = await chrome.storage.sync.get(['darkMode']);
-    const isDarkMode = result.darkMode || false;
+    const isDarkMode = (result.darkMode as boolean) || false;
     updateIcon(isDarkMode);
   } catch (error) {
     // Silently fail if storage access fails
@@ -56,7 +56,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onStartup.addListener(async () => {
   try {
     const result = await chrome.storage.sync.get(['darkMode']);
-    const isDarkMode = result.darkMode || false;
+    const isDarkMode = (result.darkMode as boolean) || false;
     updateIcon(isDarkMode);
   } catch (error) {
     // Silently fail if storage access fails
@@ -67,7 +67,7 @@ chrome.runtime.onStartup.addListener(async () => {
 (async () => {
   try {
     const result = await chrome.storage.sync.get(['darkMode']);
-    const isDarkMode = result.darkMode || false;
+    const isDarkMode = (result.darkMode as boolean) || false;
     updateIcon(isDarkMode);
   } catch (error) {
     // Silently fail if storage access fails
