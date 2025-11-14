@@ -86,9 +86,43 @@ function openStandalonePage() {
   chrome.tabs.create({ url: url });
 }
 
+// Update fade overlays based on scroll position
+function updateFadeOverlays(listElement, wrapperElement) {
+  if (!listElement || !wrapperElement) return;
+  
+  const scrollTop = listElement.scrollTop;
+  const scrollHeight = listElement.scrollHeight;
+  const clientHeight = listElement.clientHeight;
+  const fadeHeight = 30; // Match the CSS fade height
+  
+  // Check if content is scrollable
+  const isScrollable = scrollHeight > clientHeight;
+  
+  if (!isScrollable) {
+    wrapperElement.classList.remove('fade-top', 'fade-bottom');
+    return;
+  }
+  
+  // Check if scrolled away from top (by fade height)
+  if (scrollTop > fadeHeight) {
+    wrapperElement.classList.add('fade-top');
+  } else {
+    wrapperElement.classList.remove('fade-top');
+  }
+  
+  // Check if scrolled away from bottom
+  const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+  if (distanceFromBottom > fadeHeight) {
+    wrapperElement.classList.add('fade-bottom');
+  } else {
+    wrapperElement.classList.remove('fade-bottom');
+  }
+}
+
 // Render the blocked sites list
 function renderBlockedList() {
   const list = document.getElementById('blockedList');
+  const wrapper = document.getElementById('blockedListWrapper');
   
   if (blockedSites.length === 0) {
     list.innerHTML = `
@@ -96,6 +130,8 @@ function renderBlockedList() {
         <p>No blocked sites yet.<br>Add a site to get started!</p>
       </div>
     `;
+    // Update fade overlays after rendering
+    setTimeout(() => updateFadeOverlays(list, wrapper), 0);
     return;
   }
 
@@ -127,6 +163,15 @@ function renderBlockedList() {
       removeSiteByUrl(url);
     });
   });
+  
+  // Update fade overlays after rendering
+  setTimeout(() => updateFadeOverlays(list, wrapper), 0);
+  
+  // Attach scroll listener if not already attached
+  if (!list.dataset.fadeListenerAttached) {
+    list.addEventListener('scroll', () => updateFadeOverlays(list, wrapper));
+    list.dataset.fadeListenerAttached = 'true';
+  }
 }
 
 // Add a site to the blocked list
@@ -399,6 +444,7 @@ function getRemainingTime(siteKey, limitMinutes) {
 // Render the time limits list
 function renderTimeLimitsList() {
   const list = document.getElementById('timeLimitsList');
+  const wrapper = document.getElementById('timeLimitsListWrapper');
   
   if (!list) return;
   
@@ -410,6 +456,8 @@ function renderTimeLimitsList() {
         <p>No time limits set yet.<br>Add a site and time limit to get started!</p>
       </div>
     `;
+    // Update fade overlays after rendering
+    setTimeout(() => updateFadeOverlays(list, wrapper), 0);
     return;
   }
 
@@ -444,6 +492,15 @@ function renderTimeLimitsList() {
       removeTimeLimit(url);
     });
   });
+  
+  // Update fade overlays after rendering
+  setTimeout(() => updateFadeOverlays(list, wrapper), 0);
+  
+  // Attach scroll listener if not already attached
+  if (!list.dataset.fadeListenerAttached) {
+    list.addEventListener('scroll', () => updateFadeOverlays(list, wrapper));
+    list.dataset.fadeListenerAttached = 'true';
+  }
 }
 
 // Add a time limit
@@ -575,6 +632,21 @@ function switchTab(tabName) {
       content.classList.remove('active');
     }
   });
+  
+  // Update fade overlays after tab switch
+  setTimeout(() => {
+    const blockedList = document.getElementById('blockedList');
+    const blockedListWrapper = document.getElementById('blockedListWrapper');
+    const timeLimitsList = document.getElementById('timeLimitsList');
+    const timeLimitsListWrapper = document.getElementById('timeLimitsListWrapper');
+    
+    if (blockedList && blockedListWrapper) {
+      updateFadeOverlays(blockedList, blockedListWrapper);
+    }
+    if (timeLimitsList && timeLimitsListWrapper) {
+      updateFadeOverlays(timeLimitsList, timeLimitsListWrapper);
+    }
+  }, 0);
 }
 
 // Event listeners

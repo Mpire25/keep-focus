@@ -168,12 +168,66 @@ input[type="number"].error {
 }
 
 /* Lists and Items */
+.blocked-list-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .blocked-list {
   list-style: none;
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
   min-height: 0;
+}
+
+/* Fade overlays for scrollable lists */
+.blocked-list-wrapper::before,
+.blocked-list-wrapper::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 30px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Top fade */
+.blocked-list-wrapper::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--bg-secondary), transparent);
+}
+
+/* Bottom fade */
+.blocked-list-wrapper::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--bg-secondary), transparent);
+}
+
+/* Show top fade when scrolled down */
+.blocked-list-wrapper.fade-top::before {
+  opacity: 1;
+}
+
+/* Show bottom fade when scrolled up */
+.blocked-list-wrapper.fade-bottom::after {
+  opacity: 1;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .blocked-list-wrapper::before {
+  background: linear-gradient(to bottom, var(--bg-secondary), transparent);
+}
+
+body.dark-mode .blocked-list-wrapper::after {
+  background: linear-gradient(to top, var(--bg-secondary), transparent);
 }
 
 .blocked-item {
