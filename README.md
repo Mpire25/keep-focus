@@ -32,6 +32,8 @@ The rest of the description is AI generated.
 
 ### Appearance
 - **Dark Mode**: Toggle between light and dark themes for the popup and blocking overlays
+- **Dynamic Icon**: Extension icon automatically updates to match your dark mode preference
+- **Standalone Full-Page Interface**: Access a spacious, full-page management interface with sidebar navigation from the popup
 
 ## 🎯 Behavioral Design (Atomic Habits Principles)
 
@@ -53,12 +55,11 @@ The rest of the description is AI generated.
 5. Select the `keep-focus` folder
 6. The extension icon should appear in your toolbar
 
-**Note**: You'll need to add icon files (`icon16.png`, `icon48.png`, `icon128.png`) for the extension to work properly. Place them in the root directory.
-
 ## 📖 Usage
 
 ### Adding Blocked Sites
 
+**Via Popup:**
 1. Click the Keep Focus extension icon in your toolbar
 2. Make sure you're on the **"Blocked Sites"** tab
 3. Enter a domain or URL in the input field (e.g., `twitter.com`, `youtube.com`, `reddit.com/r/all`)
@@ -68,8 +69,15 @@ The rest of the description is AI generated.
 5. Click "Add" or press Enter
 6. The site will now be blocked when you try to visit it
 
+**Via Standalone Page:**
+1. Click the Keep Focus extension icon in your toolbar
+2. Click the external link button (↗) in the top right corner to open the standalone page
+3. Use the sidebar to navigate to **"Blocked Sites"** (or it may already be selected)
+4. Follow the same steps as above
+
 ### Adding Time Limits (Screen Limits)
 
+**Via Popup:**
 1. Click the Keep Focus extension icon in your toolbar
 2. Switch to the **"Screen Limits"** tab
 3. Enter a domain or URL in the first input field
@@ -77,10 +85,22 @@ The rest of the description is AI generated.
 5. Click "Add" or press Enter
 6. The extension will track your time spent on that site and block it once you reach your daily limit
 
+**Via Standalone Page:**
+1. Click the Keep Focus extension icon in your toolbar
+2. Click the external link button (↗) in the top right corner to open the standalone page
+3. Use the sidebar to navigate to **"Screen Limits"**
+4. Follow the same steps as above
+
 ### Removing Sites
 
+**Via Popup:**
 1. Open the extension popup
 2. Click the "Remove" button next to any blocked site or time limit you want to remove
+
+**Via Standalone Page:**
+1. Open the standalone page (click the external link button ↗ in the popup)
+2. Navigate to the appropriate tab (Blocked Sites or Screen Limits)
+3. Click the "Remove" button next to any blocked site or time limit you want to remove
 
 ### When You Visit a Blocked Site
 
@@ -111,8 +131,12 @@ The rest of the description is AI generated.
 ### Dark Mode
 
 1. Open the extension popup
-2. Click the moon/sun icon in the top right corner
-3. The popup and all blocking overlays will switch between light and dark themes
+2. Click the external link button (↗) in the top right corner to open the standalone page
+3. Navigate to the **"Settings"** tab
+4. Toggle the "Dark Mode" switch
+5. The popup, standalone page, extension icon, and all blocking overlays will switch between light and dark themes
+
+**Note**: You can also access the standalone page directly from the popup using the external link button (↗) for a more spacious interface with sidebar navigation.
 
 ## 🏗️ Technical Details
 
@@ -133,13 +157,28 @@ This allows your settings to sync across Chrome installations.
 ```
 keep-focus/
 ├── manifest.json       # Extension manifest
+├── background.js      # Background service worker (handles icon updates)
 ├── popup.html          # Popup UI
 ├── popup.css           # Popup styles
 ├── popup.js            # Popup logic
+├── standalone.html     # Standalone full-page interface
+├── standalone.css      # Standalone page styles
+├── standalone.js       # Standalone page logic
 ├── content.js          # Content script that blocks sites
-├── icon16.png          # Extension icon (16x16)
-├── icon48.png          # Extension icon (48x48)
-├── icon128.png         # Extension icon (128x128)
+├── shared.css          # Shared styles between popup and standalone
+├── dark-mode-init.js   # Dark mode initialization script
+├── icon16.png          # Extension icon (16x16, light mode)
+├── icon16-dark.png     # Extension icon (16x16, dark mode)
+├── icon32.png          # Extension icon (32x32, light mode)
+├── icon32-dark.png     # Extension icon (32x32, dark mode)
+├── icon48.png          # Extension icon (48x48, light mode)
+├── icon48-dark.png     # Extension icon (48x48, dark mode)
+├── icon96.png          # Extension icon (96x96, light mode)
+├── icon96-dark.png     # Extension icon (96x96, dark mode)
+├── icon128.png         # Extension icon (128x128, light mode)
+├── icon128-dark.png    # Extension icon (128x128, dark mode)
+├── icon256.png         # Extension icon (256x256, light mode)
+├── icon256-dark.png    # Extension icon (256x256, dark mode)
 └── README.md           # This file
 ```
 
