@@ -51,7 +51,7 @@ async function saveTimeLimits() {
 // Update extension icon based on dark mode
 async function updateExtensionIcon(isDarkMode) {
   try {
-    const iconSizes = [16, 48, 128];
+    const iconSizes = [16, 32, 48, 96, 128, 256];
     const iconPaths = {};
     
     iconSizes.forEach(size => {
@@ -69,16 +69,17 @@ async function updateExtensionIcon(isDarkMode) {
 
 // Update page icons (favicon and sidebar icon) based on dark mode
 function updatePageIcons(isDarkMode) {
-  // Update favicon
+  // Update favicon - use 32x32 for better quality on high-DPI displays
   const favicon = document.getElementById('favicon');
   if (favicon) {
-    favicon.href = isDarkMode ? 'icon16-dark.png' : 'icon16.png';
+    favicon.href = isDarkMode ? 'icon32-dark.png' : 'icon32.png';
   }
   
-  // Update sidebar icon
+  // Update sidebar icon - use 96x96 for better quality on high-DPI displays
+  // CSS will scale it down to 48px, but the higher resolution ensures crispness
   const sidebarIcon = document.getElementById('sidebarIcon');
   if (sidebarIcon) {
-    sidebarIcon.src = isDarkMode ? 'icon48-dark.png' : 'icon48.png';
+    sidebarIcon.src = isDarkMode ? 'icon96-dark.png' : 'icon96.png';
   }
 }
 

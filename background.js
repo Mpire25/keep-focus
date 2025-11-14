@@ -4,7 +4,7 @@
 // Helper function to update extension icon based on dark mode
 async function updateIcon(isDarkMode) {
   try {
-    const iconSizes = [16, 48, 128];
+    const iconSizes = [16, 32, 48, 96, 128, 256];
     const iconPaths = {};
     
     iconSizes.forEach(size => {
@@ -20,7 +20,7 @@ async function updateIcon(isDarkMode) {
     // This allows the extension to work even without dark mode icon files
     if (isDarkMode) {
       try {
-        const iconSizes = [16, 48, 128];
+        const iconSizes = [16, 32, 48, 96, 128, 256];
         const iconPaths = {};
         iconSizes.forEach(size => {
           iconPaths[size] = `icon${size}.png`;

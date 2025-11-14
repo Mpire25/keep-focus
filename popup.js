@@ -50,7 +50,7 @@ async function saveTimeLimits() {
 // Update extension icon based on dark mode
 async function updateExtensionIcon(isDarkMode) {
   try {
-    const iconSizes = [16, 48, 128];
+    const iconSizes = [16, 32, 48, 96, 128, 256];
     const iconPaths = {};
     
     iconSizes.forEach(size => {
