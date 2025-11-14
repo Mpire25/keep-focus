@@ -1,0 +1,253 @@
+/* ============================================
+   SHARED STYLES - Common across all pages
+   ============================================ */
+
+/* CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* CSS Variables - Unified Color System */
+:root {
+  --bg-primary: #fefdf7;
+  --bg-secondary: white;
+  --bg-tertiary: #f8f9fa;
+  --text-primary: #333;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --border-color: #e9ecef;
+  --accent-color: #d4b896;
+  --accent-hover: #c9a883;
+  --header-bg: #f0e6d4;
+  --header-text: #2c3e50;
+  --input-bg: white;
+  --input-border: #e9ecef;
+  --item-bg: #f8f9fa;
+  --item-hover: #e9ecef;
+  --remove-btn: #dc3545;
+  --remove-btn-hover: #c82333;
+  --error-color: #dc3545;
+}
+
+body.dark-mode {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #252525;
+  --text-primary: #e0e0e0;
+  --text-secondary: #c0c0c0;
+  --text-tertiary: #a0a0a0;
+  --border-color: #404040;
+  --accent-color: #d4b896;
+  --accent-hover: #c9a883;
+  --header-bg: #3a3a3a;
+  --header-text: #e0e0e0;
+  --input-bg: #2d2d2d;
+  --input-border: #404040;
+  --item-bg: #252525;
+  --item-hover: #353535;
+  --remove-btn: #dc3545;
+  --remove-btn-hover: #c82333;
+  --error-color: #dc3545;
+}
+
+/* Base Typography */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ============================================
+   SHARED COMPONENTS
+   ============================================ */
+
+/* Buttons */
+.btn-primary {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-remove {
+  padding: 6px 12px;
+  background: var(--remove-btn);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-remove:hover {
+  background: var(--remove-btn-hover);
+}
+
+/* Input Fields */
+.input-group {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+input[type="text"],
+input[type="number"] {
+  padding: 10px 14px;
+  border: 2px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
+  font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+input[type="text"].error,
+input[type="number"].error {
+  border-color: var(--error-color);
+}
+
+.time-limit-input {
+  width: 80px;
+  text-align: center;
+}
+
+/* Error Messages */
+.error-message {
+  color: var(--error-color);
+  font-size: 12px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+/* Checkbox Labels */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.3s ease;
+}
+
+.checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent-color);
+}
+
+.block-option {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+/* Lists and Items */
+.blocked-list {
+  list-style: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.blocked-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: var(--item-bg);
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.blocked-item:hover {
+  background: var(--item-hover);
+}
+
+.site-url {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-secondary);
+  word-break: break-all;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: color 0.3s ease;
+}
+
+.site-url-main {
+  font-weight: 500;
+}
+
+.site-url-mode {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  transition: color 0.3s ease;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-tertiary);
+  transition: color 0.3s ease;
+}
+
+.empty-state p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Scrollbar Styling */
+body.dark-mode ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 5px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #505050;
+}
+
+/* Firefox scrollbar */
+body.dark-mode {
+  scrollbar-color: var(--border-color) var(--bg-tertiary);
+  scrollbar-width: thin;
+}
+
