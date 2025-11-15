@@ -65,7 +65,7 @@ async function loadData(): Promise<void> {
     renderElementBlockingUI();
     attachRemoveListeners();
   } catch (error) {
-    // Error loading data
+    // Silently handle errors
   }
 }
 
@@ -212,6 +212,7 @@ async function updateYouTubeBlockingRule(option: keyof typeof YOUTUBE_SELECTORS,
   const rule = getYouTubeBlockingRule(option);
   if (rule) {
     rule.enabled = enabled;
+    
     await setStorageData({ elementBlockingRules: elementBlockingRules });
     
     // Notify content scripts to re-initialize
@@ -220,12 +221,12 @@ async function updateYouTubeBlockingRule(option: keyof typeof YOUTUBE_SELECTORS,
       tabs.forEach(tab => {
         if (tab.id) {
           chrome.tabs.reload(tab.id).catch(() => {
-            // Tab might not be accessible, ignore
+            // Silently handle reload errors
           });
         }
       });
     } catch (error) {
-      // Ignore errors
+      // Silently handle errors
     }
   }
 }
@@ -244,7 +245,8 @@ function renderElementBlockingUI(): void {
     const toggle = document.getElementById(id) as HTMLInputElement | null;
     if (toggle) {
       const rule = getYouTubeBlockingRule(option);
-      toggle.checked = rule ? rule.enabled : false;
+      const enabled = rule ? rule.enabled : false;
+      toggle.checked = enabled;
     }
   });
 }

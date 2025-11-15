@@ -49,6 +49,23 @@ function getYouTubeSelectors(option: keyof typeof YOUTUBE_SELECTORS): string[] {
   return YOUTUBE_SELECTORS[option];
 }
 
+// Check if a domain matches (handles subdomains)
+// e.g., 'www.youtube.com' matches 'youtube.com'
+function domainMatches(ruleDomain: string, currentDomain: string): boolean {
+  // Exact match
+  if (ruleDomain === currentDomain) {
+    return true;
+  }
+  
+  // Check if current domain is a subdomain of rule domain
+  // e.g., 'www.youtube.com' ends with '.youtube.com'
+  if (currentDomain.endsWith('.' + ruleDomain)) {
+    return true;
+  }
+  
+  return false;
+}
+
 // Apply element blocking for given selectors
 function applyElementBlocking(selectors: string[]): void {
   selectors.forEach(selector => {
@@ -61,17 +78,29 @@ function applyElementBlocking(selectors: string[]): void {
         }
       });
     } catch (e) {
-      // Invalid selector, skip silently
+      // Silently ignore selector errors
     }
   });
 }
+
+// Throttle function to limit how often we process mutations
+let throttleTimeout: number | null = null;
+const THROTTLE_DELAY = 100; // Process mutations at most every 100ms
 
 // Start observing for new elements
 function startElementObserver(selectors: string[]): void {
   stopElementObserver();
   
   elementObserver = new MutationObserver(() => {
-    applyElementBlocking(selectors);
+    // Throttle the callback to avoid excessive processing
+    if (throttleTimeout !== null) {
+      return; // Already scheduled
+    }
+    
+    throttleTimeout = window.setTimeout(() => {
+      throttleTimeout = null;
+      applyElementBlocking(selectors);
+    }, THROTTLE_DELAY);
   });
   
   if (document.body) {
@@ -88,7 +117,12 @@ export function stopElementObserver(): void {
     elementObserver.disconnect();
     elementObserver = null;
   }
+  if (throttleTimeout !== null) {
+    clearTimeout(throttleTimeout);
+    throttleTimeout = null;
+  }
 }
+
 
 // Initialize element blocking for current domain
 export async function initElementBlocking(): Promise<void> {
@@ -97,17 +131,19 @@ export async function initElementBlocking(): Promise<void> {
     const rules: ElementBlockingRule[] = result.elementBlockingRules || [];
     
     const currentDomain = new URL(window.location.href).hostname;
-    const activeRules = rules.filter(rule => 
-      rule.domain === currentDomain && rule.enabled
-    );
+    
+    const activeRules = rules.filter(rule => {
+      const matches = domainMatches(rule.domain, currentDomain);
+      return matches && rule.enabled;
+    });
+    
+    // Combine all selectors from active rules
+    const allSelectors = activeRules.flatMap(rule => rule.selectors);
     
     if (activeRules.length === 0) {
       stopElementObserver();
       return;
     }
-    
-    // Combine all selectors from active rules
-    const allSelectors = activeRules.flatMap(rule => rule.selectors);
     
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {
