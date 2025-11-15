@@ -28,7 +28,6 @@ const YOUTUBE_SELECTORS = {
   ],
   ads: [
     'ytd-ad-slot-renderer',
-    '.ytp-ad-module',
     'ytd-promoted-sparkles-web-renderer',
     'ytd-display-ad-renderer'
   ],
