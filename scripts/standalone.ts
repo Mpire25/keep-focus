@@ -18,7 +18,10 @@ const YOUTUBE_SELECTORS = {
     'ytd-reel-shelf-renderer',
     'a[href*="/shorts/"]',
     'ytd-shorts',
-    'ytd-reel-item-renderer'
+    'ytd-reel-item-renderer',
+    'ytd-rich-shelf-renderer[is-shorts]',
+    'ytm-shorts-lockup-view-model',
+    'ytm-shorts-lockup-view-model-v2'
   ],
   suggestedVideos: [
     'ytd-watch-next-secondary-results-renderer',
@@ -44,7 +47,14 @@ const YOUTUBE_SELECTORS = {
     '#comments',
     'ytd-comments',
     'ytd-item-section-renderer[class*="watch-next"]',
-    'ytd-compact-video-renderer'
+    'ytd-compact-video-renderer',
+    'ytd-reel-shelf-renderer',
+    'a[href*="/shorts/"]',
+    'ytd-shorts',
+    'ytd-reel-item-renderer',
+    'ytd-rich-shelf-renderer[is-shorts]',
+    'ytm-shorts-lockup-view-model',
+    'ytm-shorts-lockup-view-model-v2'
   ]
 };
 
