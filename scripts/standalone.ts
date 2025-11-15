@@ -241,19 +241,75 @@ function renderElementBlockingUI(): void {
     { id: 'youtubeMinimalToggle', option: 'minimalMode' }
   ];
   
+  // Check if minimal mode is enabled
+  const minimalModeRule = getYouTubeBlockingRule('minimalMode');
+  const isMinimalModeEnabled = minimalModeRule ? minimalModeRule.enabled : false;
+  
   options.forEach(({ id, option }) => {
     const toggle = document.getElementById(id) as HTMLInputElement | null;
     if (toggle) {
       const rule = getYouTubeBlockingRule(option);
       const enabled = rule ? rule.enabled : false;
       toggle.checked = enabled;
+      
+      // Disable other toggles when minimal mode is enabled
+      if (option !== 'minimalMode' && isMinimalModeEnabled) {
+        toggle.disabled = true;
+        toggle.parentElement?.parentElement?.classList.add('disabled');
+      } else {
+        toggle.disabled = false;
+        toggle.parentElement?.parentElement?.classList.remove('disabled');
+      }
     }
   });
 }
 
 // Handle YouTube toggle change
 async function handleYouTubeToggleChange(option: keyof typeof YOUTUBE_SELECTORS, enabled: boolean): Promise<void> {
-  await updateYouTubeBlockingRule(option, enabled);
+  // If minimal mode is being enabled, enable all other options
+  if (option === 'minimalMode' && enabled) {
+    const otherOptions: Array<keyof typeof YOUTUBE_SELECTORS> = ['shorts', 'suggestedVideos', 'ads', 'comments'];
+    
+    // Enable all other blocking options
+    for (const otherOption of otherOptions) {
+      await updateYouTubeBlockingRule(otherOption, true);
+    }
+    
+    // Then enable minimal mode
+    await updateYouTubeBlockingRule(option, enabled);
+    
+    // Update UI to reflect changes
+    renderElementBlockingUI();
+  } 
+  // If minimal mode is being disabled, just update it
+  else if (option === 'minimalMode' && !enabled) {
+    await updateYouTubeBlockingRule(option, enabled);
+    renderElementBlockingUI();
+  }
+  // If trying to change other options while minimal mode is enabled, prevent it
+  else {
+    const minimalModeRule = getYouTubeBlockingRule('minimalMode');
+    const isMinimalModeEnabled = minimalModeRule ? minimalModeRule.enabled : false;
+    
+    if (isMinimalModeEnabled) {
+      // Prevent the change - restore the toggle to its previous state
+      const toggleIdMap: Record<keyof typeof YOUTUBE_SELECTORS, string> = {
+        shorts: 'youtubeShortsToggle',
+        suggestedVideos: 'youtubeSuggestedToggle',
+        ads: 'youtubeAdsToggle',
+        comments: 'youtubeCommentsToggle',
+        minimalMode: 'youtubeMinimalToggle'
+      };
+      const toggle = document.getElementById(toggleIdMap[option]) as HTMLInputElement | null;
+      if (toggle) {
+        toggle.checked = true; // Keep it enabled since minimal mode forces it on
+      }
+      return; // Don't update the rule
+    }
+    
+    // Normal case: update the rule
+    await updateYouTubeBlockingRule(option, enabled);
+  }
 }
 
 // Add a site to the blocked list

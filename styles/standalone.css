@@ -241,9 +241,6 @@ body.dark-mode .sidebar-tab-button.active {
   color: var(--text-primary);
 }
 
-.setting-item {
-  margin-bottom: 16px;
-}
 
 .dark-mode-setting {
   display: flex;
@@ -313,6 +310,20 @@ body.dark-mode .sidebar-tab-button.active {
 
 .toggle-switch input:focus + .toggle-slider {
   box-shadow: 0 0 1px var(--accent-color);
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.setting-item.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.setting-item.disabled .toggle-label-text {
+  color: var(--text-secondary);
 }
 
 /* Blocked Sites and Screen Limits Sections */
