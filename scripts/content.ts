@@ -9,17 +9,22 @@
   const { checkAndBlockSite, stopUnlockExpirationCheck } = await import(chrome.runtime.getURL('dist/content/blocking.js'));
   const { setupUrlChangeDetection } = await import(chrome.runtime.getURL('dist/content/url-change-detection.js'));
   const { stopTimeTracking } = await import(chrome.runtime.getURL('dist/content/time-tracking.js'));
+  const { initElementBlocking, stopElementObserver } = await import(chrome.runtime.getURL('dist/content/element-blocking.js'));
   
   // Run initial check
   await checkAndBlockSite();
   
+  // Initialize element blocking
+  await initElementBlocking();
+  
   // Set up URL change detection
   setupUrlChangeDetection();
   
-  // Stop unlock expiration check and time tracking when page unloads
+  // Stop unlock expiration check, time tracking, and element observer when page unloads
   window.addEventListener('beforeunload', () => {
     stopUnlockExpirationCheck();
     stopTimeTracking();
+    stopElementObserver();
   });
 })();
 

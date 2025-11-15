@@ -3,13 +3,51 @@
 import { getAllData, setStorageData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
-import type { BlockedSite, TimeLimit, TimeTracking } from '../types/index.js';
+import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule } from '../types/index.js';
 
 let blockedSites: BlockedSite[] = [];
 let focusStreak = 0;
 let darkMode = false;
 let timeLimits: TimeLimit[] = [];
 let timeTracking: TimeTracking = {};
+let elementBlockingRules: ElementBlockingRule[] = [];
+
+// YouTube selector mappings (must match content/element-blocking.ts)
+const YOUTUBE_SELECTORS = {
+  shorts: [
+    'ytd-reel-shelf-renderer',
+    'a[href*="/shorts/"]',
+    'ytd-shorts',
+    'ytd-reel-item-renderer'
+  ],
+  suggestedVideos: [
+    'ytd-watch-next-secondary-results-renderer',
+    'ytd-compact-video-renderer',
+    '#secondary',
+    'ytd-item-section-renderer[class*="watch-next"]'
+  ],
+  ads: [
+    'ytd-ad-slot-renderer',
+    '.ytp-ad-module',
+    'ytd-promoted-sparkles-web-renderer',
+    'ytd-display-ad-renderer'
+  ],
+  comments: [
+    '#comments',
+    'ytd-comments',
+    'ytd-comments-header-renderer',
+    'ytd-comment-thread-renderer'
+  ],
+  minimalMode: [
+    '#secondary',
+    '#related',
+    'ytd-watch-next-secondary-results-renderer',
+    '#comments',
+    'ytd-comments',
+    'ytd-item-section-renderer[class*="watch-next"]',
+    'ytd-compact-video-renderer'
+  ]
+};
 
 // Load data from storage
 async function loadData(): Promise<void> {
@@ -20,9 +58,11 @@ async function loadData(): Promise<void> {
     darkMode = result.darkMode || false;
     timeLimits = result.timeLimits || [];
     timeTracking = result.timeTracking || {};
+    elementBlockingRules = result.elementBlockingRules || [];
     applyDarkMode();
     renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
     renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
+    renderElementBlockingUI();
     attachRemoveListeners();
   } catch (error) {
     // Error loading data
@@ -144,6 +184,76 @@ async function toggleDarkMode(): Promise<void> {
   await setStorageData({ darkMode: darkMode });
 }
 
+// Get or create YouTube blocking rule
+function getYouTubeBlockingRule(option: keyof typeof YOUTUBE_SELECTORS): ElementBlockingRule | null {
+  const domain = 'youtube.com';
+  const selectors = YOUTUBE_SELECTORS[option];
+  
+  let rule = elementBlockingRules.find(r => 
+    r.domain === domain && 
+    r.selectors.length === selectors.length &&
+    r.selectors.every(s => selectors.includes(s))
+  );
+  
+  if (!rule) {
+    rule = {
+      domain,
+      selectors,
+      enabled: false
+    };
+    elementBlockingRules.push(rule);
+  }
+  
+  return rule;
+}
+
+// Update YouTube blocking rule
+async function updateYouTubeBlockingRule(option: keyof typeof YOUTUBE_SELECTORS, enabled: boolean): Promise<void> {
+  const rule = getYouTubeBlockingRule(option);
+  if (rule) {
+    rule.enabled = enabled;
+    await setStorageData({ elementBlockingRules: elementBlockingRules });
+    
+    // Notify content scripts to re-initialize
+    try {
+      const tabs = await chrome.tabs.query({ url: '*://*.youtube.com/*' });
+      tabs.forEach(tab => {
+        if (tab.id) {
+          chrome.tabs.reload(tab.id).catch(() => {
+            // Tab might not be accessible, ignore
+          });
+        }
+      });
+    } catch (error) {
+      // Ignore errors
+    }
+  }
+}
+
+// Render element blocking UI
+function renderElementBlockingUI(): void {
+  const options: Array<{ id: string; option: keyof typeof YOUTUBE_SELECTORS }> = [
+    { id: 'youtubeShortsToggle', option: 'shorts' },
+    { id: 'youtubeSuggestedToggle', option: 'suggestedVideos' },
+    { id: 'youtubeAdsToggle', option: 'ads' },
+    { id: 'youtubeCommentsToggle', option: 'comments' },
+    { id: 'youtubeMinimalToggle', option: 'minimalMode' }
+  ];
+  
+  options.forEach(({ id, option }) => {
+    const toggle = document.getElementById(id) as HTMLInputElement | null;
+    if (toggle) {
+      const rule = getYouTubeBlockingRule(option);
+      toggle.checked = rule ? rule.enabled : false;
+    }
+  });
+}
+
+// Handle YouTube toggle change
+async function handleYouTubeToggleChange(option: keyof typeof YOUTUBE_SELECTORS, enabled: boolean): Promise<void> {
+  await updateYouTubeBlockingRule(option, enabled);
+}
+
 // Add a site to the blocked list
 async function handleAddSite(): Promise<void> {
   const result = await addSite(blockedSites);
@@ -231,6 +341,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (darkModeToggle) {
     darkModeToggle.addEventListener('change', toggleDarkMode);
   }
+  
+  // YouTube element blocking toggles
+  const youtubeToggles = [
+    { id: 'youtubeShortsToggle', option: 'shorts' as keyof typeof YOUTUBE_SELECTORS },
+    { id: 'youtubeSuggestedToggle', option: 'suggestedVideos' as keyof typeof YOUTUBE_SELECTORS },
+    { id: 'youtubeAdsToggle', option: 'ads' as keyof typeof YOUTUBE_SELECTORS },
+    { id: 'youtubeCommentsToggle', option: 'comments' as keyof typeof YOUTUBE_SELECTORS },
+    { id: 'youtubeMinimalToggle', option: 'minimalMode' as keyof typeof YOUTUBE_SELECTORS }
+  ];
+  
+  youtubeToggles.forEach(({ id, option }) => {
+    const toggle = document.getElementById(id) as HTMLInputElement | null;
+    if (toggle) {
+      toggle.addEventListener('change', () => {
+        handleYouTubeToggleChange(option, toggle.checked);
+      });
+    }
+  });
   
   if (siteInput) {
     siteInput.addEventListener('keypress', (e) => {

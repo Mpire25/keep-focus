@@ -217,13 +217,21 @@ body.dark-mode .sidebar-tab-button.active {
   background-color: var(--border-color);
 }
 
-/* Settings Tab */
+/* Settings Tab and Element Blocking Tab */
 .settings-section {
   flex: 1;
   padding: 32px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+}
+
+.site-blocking-section {
+  margin-bottom: 32px;
+}
+
+.site-blocking-section:last-child {
+  margin-bottom: 0;
 }
 
 .section-title {

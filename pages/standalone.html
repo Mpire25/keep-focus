@@ -24,6 +24,7 @@
         <nav class="sidebar-nav">
           <button class="sidebar-tab-button active" data-tab="blocked-sites">Blocked Sites</button>
           <button class="sidebar-tab-button" data-tab="screen-limits">Screen Limits</button>
+          <button class="sidebar-tab-button" data-tab="element-blocking">Element Blocking</button>
           <button class="sidebar-tab-button" data-tab="settings">Settings</button>
         </nav>
       </div>
@@ -88,6 +89,71 @@
               <ul id="timeLimitsList" class="blocked-list">
                 <!-- Time limits will be dynamically added here -->
               </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Element Blocking Tab -->
+        <div class="tab-content" id="element-blocking-tab">
+          <h2 class="page-title">Element Blocking</h2>
+          <div class="settings-section">
+            <div class="site-blocking-section">
+              <h3 class="section-title">YouTube</h3>
+              <div class="setting-item">
+                <div class="dark-mode-setting">
+                  <span class="toggle-label-text">Block Shorts</span>
+                  <label class="toggle-switch-label" title="Block YouTube Shorts">
+                    <div class="toggle-switch">
+                      <input type="checkbox" id="youtubeShortsToggle" data-option="shorts">
+                      <span class="toggle-slider"></span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="dark-mode-setting">
+                  <span class="toggle-label-text">Block Suggested Videos</span>
+                  <label class="toggle-switch-label" title="Block suggested videos in sidebar">
+                    <div class="toggle-switch">
+                      <input type="checkbox" id="youtubeSuggestedToggle" data-option="suggestedVideos">
+                      <span class="toggle-slider"></span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="dark-mode-setting">
+                  <span class="toggle-label-text">Block Ads</span>
+                  <label class="toggle-switch-label" title="Block YouTube ads">
+                    <div class="toggle-switch">
+                      <input type="checkbox" id="youtubeAdsToggle" data-option="ads">
+                      <span class="toggle-slider"></span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="dark-mode-setting">
+                  <span class="toggle-label-text">Block Comments</span>
+                  <label class="toggle-switch-label" title="Block YouTube comments">
+                    <div class="toggle-switch">
+                      <input type="checkbox" id="youtubeCommentsToggle" data-option="comments">
+                      <span class="toggle-slider"></span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="dark-mode-setting">
+                  <span class="toggle-label-text">Minimal Mode</span>
+                  <label class="toggle-switch-label" title="Show only the video player">
+                    <div class="toggle-switch">
+                      <input type="checkbox" id="youtubeMinimalToggle" data-option="minimalMode">
+                      <span class="toggle-slider"></span>
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </div>

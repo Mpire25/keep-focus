@@ -11,7 +11,8 @@ export async function getAllData(): Promise<ExtensionData> {
       'focusStreak',
       'timeLimits',
       'timeTracking',
-      'darkMode'
+      'darkMode',
+      'elementBlockingRules'
     ]);
     return {
       blockedSites: result.blockedSites || [],
@@ -19,7 +20,8 @@ export async function getAllData(): Promise<ExtensionData> {
       focusStreak: result.focusStreak || 0,
       timeLimits: result.timeLimits || [],
       timeTracking: result.timeTracking || {},
-      darkMode: result.darkMode || false
+      darkMode: result.darkMode || false,
+      elementBlockingRules: result.elementBlockingRules || []
     };
   } catch (error) {
     // Extension context invalidated or other error
@@ -31,7 +33,8 @@ export async function getAllData(): Promise<ExtensionData> {
         focusStreak: 0,
         timeLimits: [],
         timeTracking: {},
-        darkMode: false
+        darkMode: false,
+        elementBlockingRules: []
       };
     }
     throw error;

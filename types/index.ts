@@ -20,6 +20,12 @@ export type UnlockedUntil = Record<string, number>;
 
 export type TimeTracking = Record<string, TimeTrackingData>;
 
+export interface ElementBlockingRule {
+  domain: string;
+  selectors: string[];
+  enabled: boolean;
+}
+
 export interface ExtensionData {
   blockedSites: BlockedSite[];
   unlockedUntil: UnlockedUntil;
@@ -27,6 +33,7 @@ export interface ExtensionData {
   timeLimits: TimeLimit[];
   timeTracking: TimeTracking;
   darkMode: boolean;
+  elementBlockingRules: ElementBlockingRule[];
 }
 
 export interface ValidationResult {

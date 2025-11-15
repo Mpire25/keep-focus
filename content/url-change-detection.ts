@@ -2,6 +2,7 @@
 
 import { checkAndBlockSite, stopUnlockExpirationCheck } from './blocking.js';
 import { stopTimeTracking } from './time-tracking.js';
+import { initElementBlocking, stopElementObserver } from './element-blocking.js';
 
 // Extend Window interface for our custom property
 declare global {
@@ -25,10 +26,13 @@ export function setupUrlChangeDetection(): void {
     const currentUrl = window.location.href;
     if (currentUrl !== lastUrl) {
       lastUrl = currentUrl;
-      // Stop unlock expiration check and time tracking when URL changes
+      // Stop unlock expiration check, time tracking, and element observer when URL changes
       stopUnlockExpirationCheck();
       stopTimeTracking();
+      stopElementObserver();
       checkAndBlockSite();
+      // Re-initialize element blocking for new page
+      initElementBlocking();
     }
   }, 500); // Check every 500ms
   
@@ -37,7 +41,10 @@ export function setupUrlChangeDetection(): void {
     lastUrl = window.location.href;
     stopUnlockExpirationCheck();
     stopTimeTracking();
+    stopElementObserver();
     checkAndBlockSite();
+    // Re-initialize element blocking for new page
+    initElementBlocking();
   });
 
   // Intercept pushState and replaceState for SPA navigation
@@ -49,8 +56,12 @@ export function setupUrlChangeDetection(): void {
     lastUrl = window.location.href;
     stopUnlockExpirationCheck();
     stopTimeTracking();
+    stopElementObserver();
     // Use setTimeout to allow the page to update
-    setTimeout(() => checkAndBlockSite(), 100);
+    setTimeout(() => {
+      checkAndBlockSite();
+      initElementBlocking();
+    }, 100);
   };
 
   history.replaceState = function(...args: Parameters<typeof history.replaceState>) {
@@ -58,8 +69,12 @@ export function setupUrlChangeDetection(): void {
     lastUrl = window.location.href;
     stopUnlockExpirationCheck();
     stopTimeTracking();
+    stopElementObserver();
     // Use setTimeout to allow the page to update
-    setTimeout(() => checkAndBlockSite(), 100);
+    setTimeout(() => {
+      checkAndBlockSite();
+      initElementBlocking();
+    }, 100);
   };
 
   // Also listen for hash changes
@@ -67,7 +82,10 @@ export function setupUrlChangeDetection(): void {
     lastUrl = window.location.href;
     stopUnlockExpirationCheck();
     stopTimeTracking();
+    stopElementObserver();
     checkAndBlockSite();
+    // Re-initialize element blocking for new page
+    initElementBlocking();
   });
 }
 
