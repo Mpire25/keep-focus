@@ -114,7 +114,7 @@ export function generateOverlayStyles(darkMode: boolean): string {
       margin-bottom: 20px !important;
       transition: border-color 0.2s !important;
       font-family: inherit !important;
-      display: block !important;
+      display: none !important;
       background: ${darkMode ? '#2d2d2d' : 'white'} !important;
       color: ${darkMode ? '#e0e0e0' : '#333'} !important;
     }
@@ -235,7 +235,7 @@ export function generateOverlayStyles(darkMode: boolean): string {
       font-family: inherit !important;
       margin-bottom: 0 !important;
       margin-top: 0 !important;
-      display: block !important;
+      display: none !important;
       text-align: center !important;
       text-decoration: none !important;
       opacity: 0.6 !important;
