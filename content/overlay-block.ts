@@ -83,11 +83,11 @@ export async function showBlockOverlay(normalizedUrl: string, siteKey: string, c
   subtitle.textContent = 'Why are you visiting this site?';
   focusCard.appendChild(subtitle);
   
-  // Add reason input
+  // Add reason input (visible initially for normal blocking)
   const reasonInput = document.createElement('input');
   reasonInput.type = 'text';
   reasonInput.id = 'reasonInput';
-  reasonInput.className = 'reason-input';
+  reasonInput.className = 'reason-input visible';
   reasonInput.placeholder = "";
   reasonInput.autocomplete = 'off';
   focusCard.appendChild(reasonInput);
@@ -98,10 +98,10 @@ export async function showBlockOverlay(normalizedUrl: string, siteKey: string, c
   closeTabBtnCard.className = 'close-tab-btn-card';
   closeTabBtnCard.textContent = 'Close Tab';
   
-  // Create small submit reason link (will be added after close tab button)
+  // Create small submit reason link (visible initially for normal blocking)
   const submitReasonLink = document.createElement('button');
   submitReasonLink.id = 'submitReasonLink';
-  submitReasonLink.className = 'submit-reason-link';
+  submitReasonLink.className = 'submit-reason-link visible';
   submitReasonLink.disabled = true;
   submitReasonLink.textContent = 'Submit Reason';
   
