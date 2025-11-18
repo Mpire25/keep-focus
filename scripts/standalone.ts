@@ -26,7 +26,6 @@ const YOUTUBE_SELECTORS = {
   suggestedVideos: [
     'ytd-watch-next-secondary-results-renderer',
     'ytd-compact-video-renderer',
-    '#secondary',
     'ytd-item-section-renderer[class*="watch-next"]'
   ],
   ads: [
