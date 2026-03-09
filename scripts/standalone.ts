@@ -13,6 +13,34 @@ let darkMode = false;
 let timeLimits: TimeLimit[] = [];
 let timeTracking: TimeTracking = {};
 let elementBlockingRules: ElementBlockingRule[] = [];
+let pendingRuleMigrationSave = false;
+
+const LEGACY_YOUTUBE_SELECTORS: Partial<Record<keyof typeof YOUTUBE_SELECTORS, string[]>> = {
+  suggestedVideos: [
+    'ytd-watch-next-secondary-results-renderer',
+    'ytd-compact-video-renderer',
+    'ytd-item-section-renderer[class*="watch-next"]'
+  ]
+};
+
+function selectorsMatch(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every(s => b.includes(s));
+}
+
+function scheduleRuleMigrationSave(): void {
+  if (pendingRuleMigrationSave) {
+    return;
+  }
+  pendingRuleMigrationSave = true;
+  queueMicrotask(async () => {
+    pendingRuleMigrationSave = false;
+    try {
+      await setStorageData({ elementBlockingRules });
+    } catch {
+      // Silently handle save errors
+    }
+  });
+}
 
 // Load data from storage
 async function loadData(): Promise<void> {
@@ -122,21 +150,41 @@ function getYouTubeBlockingRule(option: keyof typeof YOUTUBE_SELECTORS): Element
   const domain = 'youtube.com';
   const selectors = YOUTUBE_SELECTORS[option];
 
-  // Match by stable option field first, then fall back to exact selector match for legacy rules
+  // Match by stable option field first, then fall back to legacy selector-based matching
   let rule = elementBlockingRules.find(r => r.domain === domain && r.option === option)
     ?? elementBlockingRules.find(r =>
         r.domain === domain &&
-        r.selectors.length === selectors.length &&
-        r.selectors.every(s => selectors.includes(s))
+        selectorsMatch(r.selectors, selectors)
       );
 
+  // Compatibility path for pre-refactor suggestedVideos rules (old selector set)
   if (!rule) {
-    rule = { domain, selectors, enabled: false, option };
+    const legacySelectors = LEGACY_YOUTUBE_SELECTORS[option];
+    if (legacySelectors) {
+      rule = elementBlockingRules.find(r =>
+        r.domain === domain &&
+        !r.option &&
+        selectorsMatch(r.selectors, legacySelectors)
+      );
+    }
+  }
+
+  if (!rule) {
+    rule = { domain, selectors: [...selectors], enabled: false, option };
     elementBlockingRules.push(rule);
   } else {
     // Migrate: keep selectors in sync with current definition and stamp option field
-    rule.selectors = selectors;
-    if (!rule.option) rule.option = option;
+    const hadOption = !!rule.option;
+    const hadCurrentSelectors = selectorsMatch(rule.selectors, selectors);
+    if (!hadCurrentSelectors) {
+      rule.selectors = [...selectors];
+    }
+    if (!rule.option) {
+      rule.option = option;
+    }
+    if (!hadOption || !hadCurrentSelectors) {
+      scheduleRuleMigrationSave();
+    }
   }
 
   return rule;
@@ -394,4 +442,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
