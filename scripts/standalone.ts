@@ -4,6 +4,8 @@ import { getAllData, setStorageData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
 import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule } from '../types/index.js';
+import { YOUTUBE_SELECTORS } from '../content/element-blocking.js';
+import { updateExtensionIcon } from '../utils/icon-utils.js';
 
 let blockedSites: BlockedSite[] = [];
 let focusStreak = 0;
@@ -11,51 +13,34 @@ let darkMode = false;
 let timeLimits: TimeLimit[] = [];
 let timeTracking: TimeTracking = {};
 let elementBlockingRules: ElementBlockingRule[] = [];
+let pendingRuleMigrationSave = false;
 
-// YouTube selector mappings (must match content/element-blocking.ts)
-const YOUTUBE_SELECTORS = {
-  shorts: [
-    'ytd-reel-shelf-renderer',
-    'a[href*="/shorts/"]',
-    'ytd-shorts',
-    'ytd-reel-item-renderer',
-    'ytd-rich-shelf-renderer[is-shorts]',
-    'ytm-shorts-lockup-view-model',
-    'ytm-shorts-lockup-view-model-v2'
-  ],
+const LEGACY_YOUTUBE_SELECTORS: Partial<Record<keyof typeof YOUTUBE_SELECTORS, string[]>> = {
   suggestedVideos: [
     'ytd-watch-next-secondary-results-renderer',
     'ytd-compact-video-renderer',
     'ytd-item-section-renderer[class*="watch-next"]'
-  ],
-  ads: [
-    'ytd-ad-slot-renderer',
-    'ytd-promoted-sparkles-web-renderer',
-    'ytd-display-ad-renderer'
-  ],
-  comments: [
-    '#comments',
-    'ytd-comments',
-    'ytd-comments-header-renderer',
-    'ytd-comment-thread-renderer'
-  ],
-  minimalMode: [
-    '#secondary',
-    '#related',
-    'ytd-watch-next-secondary-results-renderer',
-    '#comments',
-    'ytd-comments',
-    'ytd-item-section-renderer[class*="watch-next"]',
-    'ytd-compact-video-renderer',
-    'ytd-reel-shelf-renderer',
-    'a[href*="/shorts/"]',
-    'ytd-shorts',
-    'ytd-reel-item-renderer',
-    'ytd-rich-shelf-renderer[is-shorts]',
-    'ytm-shorts-lockup-view-model',
-    'ytm-shorts-lockup-view-model-v2'
   ]
 };
+
+function selectorsMatch(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every(s => b.includes(s));
+}
+
+function scheduleRuleMigrationSave(): void {
+  if (pendingRuleMigrationSave) {
+    return;
+  }
+  pendingRuleMigrationSave = true;
+  queueMicrotask(async () => {
+    pendingRuleMigrationSave = false;
+    try {
+      await setStorageData({ elementBlockingRules });
+    } catch {
+      // Silently handle save errors
+    }
+  });
+}
 
 // Load data from storage
 async function loadData(): Promise<void> {
@@ -113,38 +98,6 @@ function attachRemoveListeners(): void {
   });
 }
 
-// Update extension icon based on dark mode
-async function updateExtensionIcon(isDarkMode: boolean): Promise<void> {
-  try {
-    const iconSizes = [16, 32, 48, 96, 128, 256];
-    const iconPaths: Record<number, string> = {};
-    
-    iconSizes.forEach(size => {
-      const relativePath = isDarkMode 
-        ? `icons/icon${size}-dark.png` 
-        : `icons/icon${size}.png`;
-      iconPaths[size] = chrome.runtime.getURL(relativePath);
-    });
-    
-    await chrome.action.setIcon({ path: iconPaths });
-  } catch (error) {
-    // If dark mode icons don't exist, fall back to regular icons
-    // This allows the extension to work even without dark mode icon files
-    if (isDarkMode) {
-      try {
-        const iconSizes = [16, 32, 48, 96, 128, 256];
-        const iconPaths: Record<number, string> = {};
-        iconSizes.forEach(size => {
-          iconPaths[size] = chrome.runtime.getURL(`icons/icon${size}.png`);
-        });
-        await chrome.action.setIcon({ path: iconPaths });
-      } catch (fallbackError) {
-        // Silently fail if icon update fails
-      }
-    }
-  }
-}
-
 // Update page icons (favicon and sidebar icon) based on dark mode
 function updatePageIcons(isDarkMode: boolean): void {
   // Update favicon - use 32x32 for better quality on high-DPI displays
@@ -196,22 +149,44 @@ async function toggleDarkMode(): Promise<void> {
 function getYouTubeBlockingRule(option: keyof typeof YOUTUBE_SELECTORS): ElementBlockingRule | null {
   const domain = 'youtube.com';
   const selectors = YOUTUBE_SELECTORS[option];
-  
-  let rule = elementBlockingRules.find(r => 
-    r.domain === domain && 
-    r.selectors.length === selectors.length &&
-    r.selectors.every(s => selectors.includes(s))
-  );
-  
+
+  // Match by stable option field first, then fall back to legacy selector-based matching
+  let rule = elementBlockingRules.find(r => r.domain === domain && r.option === option)
+    ?? elementBlockingRules.find(r =>
+        r.domain === domain &&
+        selectorsMatch(r.selectors, selectors)
+      );
+
+  // Compatibility path for pre-refactor suggestedVideos rules (old selector set)
   if (!rule) {
-    rule = {
-      domain,
-      selectors,
-      enabled: false
-    };
-    elementBlockingRules.push(rule);
+    const legacySelectors = LEGACY_YOUTUBE_SELECTORS[option];
+    if (legacySelectors) {
+      rule = elementBlockingRules.find(r =>
+        r.domain === domain &&
+        !r.option &&
+        selectorsMatch(r.selectors, legacySelectors)
+      );
+    }
   }
-  
+
+  if (!rule) {
+    rule = { domain, selectors: [...selectors], enabled: false, option };
+    elementBlockingRules.push(rule);
+  } else {
+    // Migrate: keep selectors in sync with current definition and stamp option field
+    const hadOption = !!rule.option;
+    const hadCurrentSelectors = selectorsMatch(rule.selectors, selectors);
+    if (!hadCurrentSelectors) {
+      rule.selectors = [...selectors];
+    }
+    if (!rule.option) {
+      rule.option = option;
+    }
+    if (!hadOption || !hadCurrentSelectors) {
+      scheduleRuleMigrationSave();
+    }
+  }
+
   return rule;
 }
 
@@ -467,4 +442,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-

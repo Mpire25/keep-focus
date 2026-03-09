@@ -24,6 +24,7 @@ export interface ElementBlockingRule {
   domain: string;
   selectors: string[];
   enabled: boolean;
+  option?: string; // Stable identifier for the blocking option (e.g. 'shorts', 'suggestedVideos')
 }
 
 export interface ExtensionData {
