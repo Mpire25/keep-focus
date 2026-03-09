@@ -34,16 +34,4 @@ export function hideBodyContent(): void {
   }
 }
 
-// Inject overlay styles if not already present
-export async function injectOverlayStyles(darkMode: boolean): Promise<void> {
-  if (document.getElementById('keep-focus-styles')) {
-    return; // Styles already injected
-  }
-  
-  const { generateOverlayStyles } = await import('./overlay-styles.js');
-  const style = document.createElement('style');
-  style.id = 'keep-focus-styles';
-  style.textContent = generateOverlayStyles(darkMode);
-  document.head.appendChild(style);
-}
 
