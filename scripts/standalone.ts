@@ -5,6 +5,7 @@ import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
 import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule } from '../types/index.js';
 import { YOUTUBE_SELECTORS } from '../content/element-blocking.js';
+import { updateExtensionIcon } from '../utils/icon-utils.js';
 
 let blockedSites: BlockedSite[] = [];
 let focusStreak = 0;
@@ -67,38 +68,6 @@ function attachRemoveListeners(): void {
       }
     });
   });
-}
-
-// Update extension icon based on dark mode
-async function updateExtensionIcon(isDarkMode: boolean): Promise<void> {
-  try {
-    const iconSizes = [16, 32, 48, 96, 128, 256];
-    const iconPaths: Record<number, string> = {};
-    
-    iconSizes.forEach(size => {
-      const relativePath = isDarkMode 
-        ? `icons/icon${size}-dark.png` 
-        : `icons/icon${size}.png`;
-      iconPaths[size] = chrome.runtime.getURL(relativePath);
-    });
-    
-    await chrome.action.setIcon({ path: iconPaths });
-  } catch (error) {
-    // If dark mode icons don't exist, fall back to regular icons
-    // This allows the extension to work even without dark mode icon files
-    if (isDarkMode) {
-      try {
-        const iconSizes = [16, 32, 48, 96, 128, 256];
-        const iconPaths: Record<number, string> = {};
-        iconSizes.forEach(size => {
-          iconPaths[size] = chrome.runtime.getURL(`icons/icon${size}.png`);
-        });
-        await chrome.action.setIcon({ path: iconPaths });
-      } catch (fallbackError) {
-        // Silently fail if icon update fails
-      }
-    }
-  }
 }
 
 // Update page icons (favicon and sidebar icon) based on dark mode
