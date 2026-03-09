@@ -6,6 +6,13 @@ export interface Quote {
 }
 
 export const FOCUS_QUOTES: Quote[] = [
+  // Atomic Habits (James Clear)
+  { text: 'You do not rise to the level of your goals. You fall to the level of your systems.', author: 'James Clear' },
+  { text: 'Every action you take is a vote for the type of person you wish to become.', author: 'James Clear' },
+  { text: 'Habits are the compound interest of self-improvement.', author: 'James Clear' },
+  { text: 'Goals are good for setting a direction, but systems are best for making progress.', author: 'James Clear' },
+  { text: 'You should be far more concerned with your current trajectory than with your current results.', author: 'James Clear' },
+
   // Deep Work & Focus
   { text: 'The ability to perform deep work is becoming increasingly rare and increasingly valuable.', author: 'Cal Newport' },
   { text: 'Clarity about what matters provides clarity about what does not.', author: 'Cal Newport' },
