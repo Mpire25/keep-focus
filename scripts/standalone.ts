@@ -121,22 +121,24 @@ async function toggleDarkMode(): Promise<void> {
 function getYouTubeBlockingRule(option: keyof typeof YOUTUBE_SELECTORS): ElementBlockingRule | null {
   const domain = 'youtube.com';
   const selectors = YOUTUBE_SELECTORS[option];
-  
-  let rule = elementBlockingRules.find(r => 
-    r.domain === domain && 
-    r.selectors.length === selectors.length &&
-    r.selectors.every(s => selectors.includes(s))
-  );
-  
+
+  // Match by stable option field first, then fall back to exact selector match for legacy rules
+  let rule = elementBlockingRules.find(r => r.domain === domain && r.option === option)
+    ?? elementBlockingRules.find(r =>
+        r.domain === domain &&
+        r.selectors.length === selectors.length &&
+        r.selectors.every(s => selectors.includes(s))
+      );
+
   if (!rule) {
-    rule = {
-      domain,
-      selectors,
-      enabled: false
-    };
+    rule = { domain, selectors, enabled: false, option };
     elementBlockingRules.push(rule);
+  } else {
+    // Migrate: keep selectors in sync with current definition and stamp option field
+    rule.selectors = selectors;
+    if (!rule.option) rule.option = option;
   }
-  
+
   return rule;
 }
 
