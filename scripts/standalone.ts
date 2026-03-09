@@ -4,6 +4,7 @@ import { getAllData, setStorageData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
 import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule } from '../types/index.js';
+import { YOUTUBE_SELECTORS } from '../content/element-blocking.js';
 
 let blockedSites: BlockedSite[] = [];
 let focusStreak = 0;
@@ -11,51 +12,6 @@ let darkMode = false;
 let timeLimits: TimeLimit[] = [];
 let timeTracking: TimeTracking = {};
 let elementBlockingRules: ElementBlockingRule[] = [];
-
-// YouTube selector mappings (must match content/element-blocking.ts)
-const YOUTUBE_SELECTORS = {
-  shorts: [
-    'ytd-reel-shelf-renderer',
-    'a[href*="/shorts/"]',
-    'ytd-shorts',
-    'ytd-reel-item-renderer',
-    'ytd-rich-shelf-renderer[is-shorts]',
-    'ytm-shorts-lockup-view-model',
-    'ytm-shorts-lockup-view-model-v2'
-  ],
-  suggestedVideos: [
-    'ytd-watch-next-secondary-results-renderer',
-    'ytd-compact-video-renderer',
-    'ytd-item-section-renderer[class*="watch-next"]'
-  ],
-  ads: [
-    'ytd-ad-slot-renderer',
-    'ytd-promoted-sparkles-web-renderer',
-    'ytd-display-ad-renderer'
-  ],
-  comments: [
-    '#comments',
-    'ytd-comments',
-    'ytd-comments-header-renderer',
-    'ytd-comment-thread-renderer'
-  ],
-  minimalMode: [
-    '#secondary',
-    '#related',
-    'ytd-watch-next-secondary-results-renderer',
-    '#comments',
-    'ytd-comments',
-    'ytd-item-section-renderer[class*="watch-next"]',
-    'ytd-compact-video-renderer',
-    'ytd-reel-shelf-renderer',
-    'a[href*="/shorts/"]',
-    'ytd-shorts',
-    'ytd-reel-item-renderer',
-    'ytd-rich-shelf-renderer[is-shorts]',
-    'ytm-shorts-lockup-view-model',
-    'ytm-shorts-lockup-view-model-v2'
-  ]
-};
 
 // Load data from storage
 async function loadData(): Promise<void> {

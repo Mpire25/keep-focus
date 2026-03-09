@@ -8,7 +8,7 @@ let elementObserver: MutationObserver | null = null;
 const hiddenElements = new WeakSet<Element>();
 
 // YouTube selector mappings
-const YOUTUBE_SELECTORS = {
+export const YOUTUBE_SELECTORS = {
   shorts: [
     'ytd-reel-shelf-renderer',
     'a[href*="/shorts/"]',
