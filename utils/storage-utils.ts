@@ -12,7 +12,9 @@ export async function getAllData(): Promise<ExtensionData> {
       'timeLimits',
       'timeTracking',
       'darkMode',
-      'elementBlockingRules'
+      'elementBlockingRules',
+      'screenTimeEnabled',
+      'screenTimeHistory'
     ]);
     return {
       blockedSites: result.blockedSites || [],
@@ -21,7 +23,9 @@ export async function getAllData(): Promise<ExtensionData> {
       timeLimits: result.timeLimits || [],
       timeTracking: result.timeTracking || {},
       darkMode: result.darkMode || false,
-      elementBlockingRules: result.elementBlockingRules || []
+      elementBlockingRules: result.elementBlockingRules || [],
+      screenTimeEnabled: result.screenTimeEnabled || false,
+      screenTimeHistory: result.screenTimeHistory || {}
     };
   } catch (error) {
     // Extension context invalidated or other error
@@ -34,7 +38,9 @@ export async function getAllData(): Promise<ExtensionData> {
         timeLimits: [],
         timeTracking: {},
         darkMode: false,
-        elementBlockingRules: []
+        elementBlockingRules: [],
+        screenTimeEnabled: false,
+        screenTimeHistory: {}
       };
     }
     throw error;

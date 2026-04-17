@@ -3,7 +3,8 @@
 import { getAllData, setStorageData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
-import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule } from '../types/index.js';
+import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule, ScreenTimeHistory } from '../types/index.js';
+import { formatTime, getCurrentDateString } from '../utils/time-utils.js';
 import { YOUTUBE_SELECTORS } from '../content/element-blocking.js';
 import { updateExtensionIcon } from '../utils/icon-utils.js';
 
@@ -14,6 +15,9 @@ let timeLimits: TimeLimit[] = [];
 let timeTracking: TimeTracking = {};
 let elementBlockingRules: ElementBlockingRule[] = [];
 let pendingRuleMigrationSave = false;
+let screenTimeEnabled = false;
+let screenTimeHistory: ScreenTimeHistory = {};
+let selectedHistoryDate: string | null = null;
 
 const LEGACY_YOUTUBE_SELECTORS: Partial<Record<keyof typeof YOUTUBE_SELECTORS, string[]>> = {
   suggestedVideos: [
@@ -52,14 +56,101 @@ async function loadData(): Promise<void> {
     timeLimits = result.timeLimits || [];
     timeTracking = result.timeTracking || {};
     elementBlockingRules = result.elementBlockingRules || [];
+    screenTimeEnabled = result.screenTimeEnabled || false;
+    screenTimeHistory = result.screenTimeHistory || {};
     applyDarkMode();
     renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
     renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
     renderElementBlockingUI();
+    renderScreenTimeSection();
     attachRemoveListeners();
   } catch (error) {
     // Silently handle errors
   }
+}
+
+function formatDateLabel(dateStr: string): string {
+  const today = getCurrentDateString();
+  if (dateStr === today) return 'Today';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function renderSiteTimeList(containerId: string, entry: Record<string, number> | undefined): void {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!entry || Object.keys(entry).length === 0) {
+    container.innerHTML = '<p class="empty-state-text">No activity recorded.</p>';
+    return;
+  }
+  const sorted = Object.entries(entry).sort((a, b) => b[1] - a[1]);
+  container.innerHTML = sorted
+    .map(([domain, ms]) => `
+      <div class="screen-time-item">
+        <span class="screen-time-domain">${domain}</span>
+        <span class="screen-time-duration">${formatTime(ms)}</span>
+      </div>`)
+    .join('');
+}
+
+function renderScreenTimePills(): void {
+  const pillsContainer = document.getElementById('screenTimeDatePills');
+  if (!pillsContainer) return;
+
+  const today = getCurrentDateString();
+  // Collect dates with data, excluding today (shown separately), last 14 days
+  const dates = Object.keys(screenTimeHistory)
+    .filter(d => d !== today)
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, 13);
+
+  if (dates.length === 0) {
+    pillsContainer.innerHTML = '<p class="empty-state-text">No history yet.</p>';
+    document.getElementById('screenTimeHistoryList')!.innerHTML = '';
+    return;
+  }
+
+  pillsContainer.innerHTML = dates
+    .map(d => `
+      <button class="screen-time-pill${d === selectedHistoryDate ? ' active' : ''}" data-date="${d}">
+        ${formatDateLabel(d)}
+      </button>`)
+    .join('');
+
+  pillsContainer.querySelectorAll('.screen-time-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedHistoryDate = (btn as HTMLElement).dataset.date || null;
+      renderScreenTimePills();
+      renderSiteTimeList('screenTimeHistoryList', selectedHistoryDate ? screenTimeHistory[selectedHistoryDate] : undefined);
+    });
+  });
+
+  if (selectedHistoryDate) {
+    renderSiteTimeList('screenTimeHistoryList', screenTimeHistory[selectedHistoryDate]);
+  }
+}
+
+function renderScreenTimeSection(): void {
+  const toggle = document.getElementById('screenTimeToggle') as HTMLInputElement | null;
+  if (toggle) toggle.checked = screenTimeEnabled;
+
+  const content = document.getElementById('screenTimeContent');
+  if (content) content.style.display = screenTimeEnabled ? '' : 'none';
+
+  if (!screenTimeEnabled) return;
+
+  const today = getCurrentDateString();
+  const todayTitle = document.getElementById('screenTimeTodayTitle');
+  if (todayTitle) todayTitle.textContent = `Today — ${formatDateLabel(today).replace('Today', new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}`;
+
+  renderSiteTimeList('screenTimeTodayList', screenTimeHistory[today]);
+  renderScreenTimePills();
+}
+
+async function toggleScreenTime(): Promise<void> {
+  screenTimeEnabled = !screenTimeEnabled;
+  await setStorageData({ screenTimeEnabled });
+  renderScreenTimeSection();
 }
 
 // Attach remove button listeners
@@ -382,6 +473,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (darkModeToggle) {
     darkModeToggle.addEventListener('change', toggleDarkMode);
   }
+
+  const screenTimeToggle = document.getElementById('screenTimeToggle') as HTMLInputElement | null;
+  if (screenTimeToggle) {
+    screenTimeToggle.addEventListener('change', toggleScreenTime);
+  }
   
   // YouTube element blocking toggles
   const youtubeToggles = [
@@ -401,6 +497,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
+  // Refresh screen time view when storage updates (e.g. tracking in another tab)
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync') return;
+    if (changes.screenTimeHistory) {
+      screenTimeHistory = (changes.screenTimeHistory.newValue as ScreenTimeHistory) || {};
+      renderScreenTimeSection();
+    }
+    if (changes.screenTimeEnabled) {
+      screenTimeEnabled = changes.screenTimeEnabled.newValue as boolean || false;
+      renderScreenTimeSection();
+    }
+  });
+
   if (siteInput) {
     siteInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
