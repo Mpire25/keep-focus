@@ -9,6 +9,72 @@ import type { TimeLimit, TimeTracking, TimeTrackingData } from '../types/index.j
 let timeTrackingInterval: number | null = null;
 let currentSiteKey: string | null = null;
 let timeTrackingStartTime: number | null = null;
+let isWindowFocused = true;
+let focusListenersSetUp = false;
+
+// Pause interval and save elapsed — keeps currentSiteKey so tracking can resume
+function pauseTimeTracking(): void {
+  if (timeTrackingInterval !== null) {
+    clearInterval(timeTrackingInterval);
+    timeTrackingInterval = null;
+  }
+  if (currentSiteKey && timeTrackingStartTime) {
+    const elapsed = Date.now() - timeTrackingStartTime;
+    if (elapsed > 0) {
+      getStorageData(['timeTracking']).then(result => {
+        const tracking = (result.timeTracking as TimeTracking) || {};
+        if (tracking[currentSiteKey!]) {
+          const currentDate = getCurrentDateString();
+          if (tracking[currentSiteKey!].date !== currentDate) {
+            tracking[currentSiteKey!] = { date: currentDate, timeSpent: elapsed, lastActive: Date.now() };
+          } else {
+            tracking[currentSiteKey!].timeSpent = (tracking[currentSiteKey!].timeSpent || 0) + elapsed;
+            tracking[currentSiteKey!].lastActive = Date.now();
+          }
+          setStorageData({ timeTracking: tracking }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+  }
+  timeTrackingStartTime = null;
+}
+
+// Resume interval after a focus/visibility pause
+function resumeTimeTracking(): void {
+  if (!currentSiteKey || timeTrackingInterval !== null) return;
+  getStorageData(['timeTracking']).then(result => {
+    const tracking = (result.timeTracking as TimeTracking) || {};
+    if (currentSiteKey) {
+      startTimeTracking(currentSiteKey, tracking);
+    }
+  }).catch(() => {});
+}
+
+function setupFocusListeners(): void {
+  if (focusListenersSetUp) return;
+  focusListenersSetUp = true;
+  isWindowFocused = document.hasFocus();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      pauseTimeTracking();
+    } else if (isWindowFocused) {
+      resumeTimeTracking();
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    isWindowFocused = false;
+    pauseTimeTracking();
+  });
+
+  window.addEventListener('focus', () => {
+    isWindowFocused = true;
+    if (!document.hidden) {
+      resumeTimeTracking();
+    }
+  });
+}
 
 // Start time tracking for a site
 export function startTimeTracking(siteKey: string, timeTracking: TimeTracking): void {
@@ -20,15 +86,24 @@ export function startTimeTracking(siteKey: string, timeTracking: TimeTracking): 
   // Stop any existing tracking
   stopTimeTracking();
   
+  // Set up focus/visibility listeners once
+  setupFocusListeners();
+
   // Update current site
   currentSiteKey = siteKey;
+
+  // Don't start interval if window isn't focused or tab is hidden
+  if (!isWindowFocused || document.hidden) {
+    return;
+  }
+
   timeTrackingStartTime = Date.now();
-  
+
   // Update lastActive
   if (timeTracking[siteKey]) {
     timeTracking[siteKey].lastActive = timeTrackingStartTime;
   }
-  
+
   // Start periodic update (every 2 seconds)
   timeTrackingInterval = window.setInterval(async () => {
     try {
