@@ -378,8 +378,20 @@ body.dark-mode .sidebar-tab-button.active {
 
 /* ── Screen Time ─────────────────────────────────────────── */
 
+.screen-time-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Sections inside the scroll area flow naturally — no individual scrolling */
+#screen-time-tab .settings-section {
+  flex: unset;
+  overflow-y: visible;
+}
+
 .screen-time-content {
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .screen-time-list {
