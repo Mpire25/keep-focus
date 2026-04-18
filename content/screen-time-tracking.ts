@@ -9,6 +9,8 @@ let screenTimeStartTime: number | null = null;
 let currentDomain: string | null = null;
 let isTracking = false;
 let isWindowFocused = true; // assume focused on load; blur fires immediately if not
+let pendingElapsed = 0;     // ms accumulated in memory, flushed to storage every 30s
+let lastFlushTime = 0;
 
 function getDomain(): string {
   return window.location.hostname.replace(/^www\./, '').toLowerCase();
@@ -37,9 +39,12 @@ async function saveElapsed(domain: string, elapsed: number): Promise<void> {
   }
 }
 
+const FLUSH_INTERVAL_MS = 30_000;
+
 function startInterval(): void {
   if (screenTimeInterval !== null) return;
   screenTimeStartTime = Date.now();
+  if (lastFlushTime === 0) lastFlushTime = Date.now();
   screenTimeInterval = window.setInterval(async () => {
     if (!screenTimeStartTime || !currentDomain) return;
     const now = Date.now();
@@ -49,8 +54,21 @@ function startInterval(): void {
       return;
     }
     screenTimeStartTime = now;
-    await saveElapsed(currentDomain, elapsed);
+    pendingElapsed += elapsed;
+
+    // Only write to storage every 30 seconds
+    if (now - lastFlushTime >= FLUSH_INTERVAL_MS) {
+      await flushToStorage();
+    }
   }, 2000);
+}
+
+async function flushToStorage(): Promise<void> {
+  if (!currentDomain || pendingElapsed <= 0) return;
+  const toFlush = pendingElapsed;
+  pendingElapsed = 0;
+  lastFlushTime = Date.now();
+  await saveElapsed(currentDomain, toFlush);
 }
 
 function stopInterval(): void {
@@ -58,13 +76,14 @@ function stopInterval(): void {
     clearInterval(screenTimeInterval);
     screenTimeInterval = null;
   }
+  // Capture any remaining tick time and flush everything pending
   if (currentDomain && screenTimeStartTime) {
-    const elapsed = Date.now() - screenTimeStartTime;
-    if (elapsed > 0) {
-      saveElapsed(currentDomain, elapsed);
-    }
+    pendingElapsed += Date.now() - screenTimeStartTime;
   }
   screenTimeStartTime = null;
+  if (pendingElapsed > 0) {
+    flushToStorage();
+  }
 }
 
 export async function initScreenTimeTracking(): Promise<void> {
@@ -112,4 +131,6 @@ export function stopScreenTimeTracking(): void {
   isTracking = false;
   stopInterval();
   currentDomain = null;
+  pendingElapsed = 0;
+  lastFlushTime = 0;
 }
