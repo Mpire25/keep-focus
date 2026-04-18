@@ -388,6 +388,7 @@ body.dark-mode .sidebar-tab-button.active {
 #screen-time-tab .settings-section {
   flex: unset;
   overflow-y: visible;
+  padding: 16px 32px;
 }
 
 .screen-time-content {
@@ -412,13 +413,7 @@ body.dark-mode .sidebar-tab-button.active {
 }
 
 .screen-time-item:hover {
-  background: var(--accent-color);
-  border-color: transparent;
-}
-
-.screen-time-item:hover .screen-time-domain,
-.screen-time-item:hover .screen-time-duration {
-  color: #fff;
+  background: var(--item-hover);
 }
 
 .screen-time-domain {
