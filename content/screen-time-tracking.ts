@@ -8,6 +8,7 @@ let screenTimeInterval: number | null = null;
 let screenTimeStartTime: number | null = null;
 let currentDomain: string | null = null;
 let isTracking = false;
+let isWindowFocused = true; // assume focused on load; blur fires immediately if not
 
 function getDomain(): string {
   return window.location.hostname.replace(/^www\./, '').toLowerCase();
@@ -74,7 +75,9 @@ export async function initScreenTimeTracking(): Promise<void> {
     currentDomain = getDomain();
     isTracking = true;
 
-    if (!document.hidden) {
+    isWindowFocused = document.hasFocus();
+
+    if (!document.hidden && isWindowFocused) {
       startInterval();
     }
 
@@ -82,10 +85,23 @@ export async function initScreenTimeTracking(): Promise<void> {
       if (!isTracking) return;
       if (document.hidden) {
         stopInterval();
-      } else {
-        screenTimeStartTime = Date.now();
+      } else if (isWindowFocused) {
         startInterval();
       }
+    });
+
+    window.addEventListener('focus', () => {
+      if (!isTracking) return;
+      isWindowFocused = true;
+      if (!document.hidden) {
+        startInterval();
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      if (!isTracking) return;
+      isWindowFocused = false;
+      stopInterval();
     });
   } catch {
     // Ignore errors
