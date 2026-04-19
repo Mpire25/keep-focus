@@ -565,12 +565,32 @@ body.dark-mode .sidebar-tab-button.active {
   min-width: 0;
 }
 
+.st-site-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: 1px;
+}
+
 .st-site-time {
   font-size: 13px;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
 }
+
+.st-site-delta {
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+  color: var(--text-secondary);
+  min-height: 14px;
+  display: block;
+}
+
+.st-site-delta.up { color: #c0524a; }
+.st-site-delta.down { color: #4a9e6e; }
 
 .st-site-bar-track {
   height: 4px;

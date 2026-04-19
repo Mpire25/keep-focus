@@ -150,9 +150,22 @@ function renderMostUsed(): void {
   const sorted = Object.entries(entry).sort((a, b) => b[1] - a[1]).slice(0, 10);
   const maxMs = sorted[0][1];
 
+  const prevDate = new Date(dateStr + 'T00:00:00');
+  prevDate.setDate(prevDate.getDate() - 1);
+  const prevDateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
+  const prevEntry = screenTimeHistory[prevDateStr] ?? {};
+
   container.innerHTML = sorted.map(([domain, ms], i) => {
     const color = SITE_COLORS[i % SITE_COLORS.length];
     const widthPct = ((ms / maxMs) * 100).toFixed(1);
+    const prevMs = prevEntry[domain];
+    let deltaCls = '';
+    let deltaText = '';
+    if (prevMs !== undefined && ms !== prevMs) {
+      const delta = ms - prevMs;
+      deltaCls = delta > 0 ? 'up' : 'down';
+      deltaText = `${delta > 0 ? '↑' : '↓'} ${formatTime(Math.abs(delta))}`;
+    }
     return `<div class="st-site-item">
       <div class="st-site-favicon-wrap">
         <img class="st-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" alt="">
@@ -161,7 +174,10 @@ function renderMostUsed(): void {
       <div class="st-site-info">
         <div class="st-site-top">
           <span class="st-site-name">${domain}</span>
-          <span class="st-site-time">${formatTime(ms)}</span>
+          <div class="st-site-right">
+            <span class="st-site-time">${formatTime(ms)}</span>
+            <span class="st-site-delta ${deltaCls}">${deltaText}</span>
+          </div>
         </div>
         <div class="st-site-bar-track">
           <div class="st-site-bar-fill" style="width:${widthPct}%;background:${color}"></div>
