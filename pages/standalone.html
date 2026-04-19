@@ -161,37 +161,30 @@
 
         <!-- Screen Time Tab -->
         <div class="tab-content" id="screen-time-tab">
-          <h2 class="page-title">Screen Time</h2>
+          <h2 class="page-title">Screen Time
+            <label class="toggle-switch-label" title="Enable Screen Time tracking">
+              <div class="toggle-switch">
+                <input type="checkbox" id="screenTimeToggle">
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+          </h2>
           <div class="screen-time-scroll-area">
-            <div class="settings-section">
-              <div class="setting-item">
-                <div class="dark-mode-setting">
-                  <span class="toggle-label-text">Track Screen Time</span>
-                  <label class="toggle-switch-label" title="Track time spent on all sites">
-                    <div class="toggle-switch">
-                      <input type="checkbox" id="screenTimeToggle">
-                      <span class="toggle-slider"></span>
-                    </div>
-                  </label>
+            <div id="screenTimeContent" style="display:none;">
+              <div class="st-summary-card">
+                <div class="st-summary-period" id="stSummaryPeriod">Today</div>
+                <div class="st-summary-time" id="stSummaryTime">—</div>
+                <div class="st-bar-chart" id="stBarChart"></div>
+              </div>
+              <div class="st-section">
+                <h3 class="st-section-title">Most Used</h3>
+                <div id="stMostUsedList" class="st-most-used-list">
+                  <p class="empty-state-text">No activity recorded.</p>
                 </div>
               </div>
             </div>
-
-            <div id="screenTimeContent" class="screen-time-content" style="display:none;">
-              <div class="settings-section">
-                <h3 class="section-title" id="screenTimeTodayTitle">Today</h3>
-                <div id="screenTimeTodayList" class="screen-time-list">
-                  <p class="empty-state-text">No activity recorded yet today.</p>
-                </div>
-              </div>
-
-              <div class="settings-section">
-                <h3 class="section-title">History</h3>
-                <div id="screenTimeDatePills" class="screen-time-date-pills"></div>
-                <div id="screenTimeHistoryList" class="screen-time-list">
-                  <p class="empty-state-text">Select a day above to view history.</p>
-                </div>
-              </div>
+            <div id="screenTimeDisabled" class="st-disabled-state">
+              Enable Screen Time tracking above to see your browsing usage.
             </div>
           </div>
         </div>

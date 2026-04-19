@@ -69,65 +69,103 @@ async function loadData(): Promise<void> {
   }
 }
 
-function formatDateLabel(dateStr: string): string {
+const SITE_COLORS = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#F7B731',
+  '#A29BFE', '#FD79A8', '#55EFC4', '#FDCB6E', '#74B9FF',
+];
+
+function getLast7Days(): string[] {
+  const days: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    );
+  }
+  return days;
+}
+
+function getDayTotalMs(dateStr: string): number {
+  const entry = screenTimeHistory[dateStr];
+  if (!entry) return 0;
+  return Object.values(entry).reduce((a, b) => a + b, 0);
+}
+
+function getDayLabel(dateStr: string): string {
   const today = getCurrentDateString();
   if (dateStr === today) return 'Today';
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-function renderSiteTimeList(containerId: string, entry: Record<string, number> | undefined): void {
-  const container = document.getElementById(containerId);
+function getDayLetter(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 1);
+}
+
+function renderBarChart(): void {
+  const container = document.getElementById('stBarChart');
   if (!container) return;
+
+  const days = getLast7Days();
+  const totals = days.map(d => getDayTotalMs(d));
+  const maxTotal = Math.max(...totals, 1);
+  const today = getCurrentDateString();
+  const selected = selectedHistoryDate ?? today;
+
+  container.innerHTML = days.map((dateStr, i) => {
+    const total = totals[i];
+    const heightPct = total > 0 ? Math.max((total / maxTotal) * 100, 8) : 0;
+    const isSelected = dateStr === selected;
+    const isToday = dateStr === today;
+    return `<div class="st-bar-col${isSelected ? ' selected' : ''}" data-date="${dateStr}">
+      <div class="st-bar-track"><div class="st-bar-fill" style="height:${heightPct}%"></div></div>
+      <div class="st-bar-label${isToday ? ' today' : ''}">${getDayLetter(dateStr)}</div>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('.st-bar-col').forEach(col => {
+    col.addEventListener('click', () => {
+      const dateStr = (col as HTMLElement).dataset.date!;
+      selectedHistoryDate = dateStr === today ? null : dateStr;
+      renderScreenTimeSection();
+    });
+  });
+}
+
+function renderMostUsed(): void {
+  const container = document.getElementById('stMostUsedList');
+  if (!container) return;
+
+  const today = getCurrentDateString();
+  const dateStr = selectedHistoryDate ?? today;
+  const entry = screenTimeHistory[dateStr];
+
   if (!entry || Object.keys(entry).length === 0) {
     container.innerHTML = '<p class="empty-state-text">No activity recorded.</p>';
     return;
   }
-  const sorted = Object.entries(entry).sort((a, b) => b[1] - a[1]);
-  container.innerHTML = sorted
-    .map(([domain, ms]) => `
-      <div class="screen-time-item">
-        <span class="screen-time-domain">${domain}</span>
-        <span class="screen-time-duration">${formatTime(ms)}</span>
-      </div>`)
-    .join('');
-}
 
-function renderScreenTimePills(): void {
-  const pillsContainer = document.getElementById('screenTimeDatePills');
-  if (!pillsContainer) return;
+  const sorted = Object.entries(entry).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const maxMs = sorted[0][1];
 
-  const today = getCurrentDateString();
-  // Collect dates with data, excluding today (shown separately), last 14 days
-  const dates = Object.keys(screenTimeHistory)
-    .filter(d => d !== today)
-    .sort((a, b) => b.localeCompare(a))
-    .slice(0, 13);
-
-  if (dates.length === 0) {
-    pillsContainer.innerHTML = '<p class="empty-state-text">No history yet.</p>';
-    document.getElementById('screenTimeHistoryList')!.innerHTML = '';
-    return;
-  }
-
-  pillsContainer.innerHTML = dates
-    .map(d => `
-      <button class="screen-time-pill${d === selectedHistoryDate ? ' active' : ''}" data-date="${d}">
-        ${formatDateLabel(d)}
-      </button>`)
-    .join('');
-
-  pillsContainer.querySelectorAll('.screen-time-pill').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedHistoryDate = (btn as HTMLElement).dataset.date || null;
-      renderScreenTimePills();
-      renderSiteTimeList('screenTimeHistoryList', selectedHistoryDate ? screenTimeHistory[selectedHistoryDate] : undefined);
-    });
-  });
-
-  if (selectedHistoryDate) {
-    renderSiteTimeList('screenTimeHistoryList', screenTimeHistory[selectedHistoryDate]);
-  }
+  container.innerHTML = sorted.map(([domain, ms], i) => {
+    const color = SITE_COLORS[i % SITE_COLORS.length];
+    const widthPct = ((ms / maxMs) * 100).toFixed(1);
+    return `<div class="st-site-item">
+      <div class="st-site-dot" style="background:${color}"></div>
+      <div class="st-site-info">
+        <div class="st-site-top">
+          <span class="st-site-name">${domain}</span>
+          <span class="st-site-time">${formatTime(ms)}</span>
+        </div>
+        <div class="st-site-bar-track">
+          <div class="st-site-bar-fill" style="width:${widthPct}%;background:${color}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderScreenTimeSection(): void {
@@ -135,16 +173,23 @@ function renderScreenTimeSection(): void {
   if (toggle) toggle.checked = screenTimeEnabled;
 
   const content = document.getElementById('screenTimeContent');
+  const disabledEl = document.getElementById('screenTimeDisabled');
   if (content) content.style.display = screenTimeEnabled ? '' : 'none';
+  if (disabledEl) disabledEl.style.display = screenTimeEnabled ? 'none' : '';
 
   if (!screenTimeEnabled) return;
 
   const today = getCurrentDateString();
-  const todayTitle = document.getElementById('screenTimeTodayTitle');
-  if (todayTitle) todayTitle.textContent = `Today — ${formatDateLabel(today).replace('Today', new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }))}`;
+  const dateStr = selectedHistoryDate ?? today;
+  const total = getDayTotalMs(dateStr);
 
-  renderSiteTimeList('screenTimeTodayList', screenTimeHistory[today]);
-  renderScreenTimePills();
+  const periodEl = document.getElementById('stSummaryPeriod');
+  const timeEl = document.getElementById('stSummaryTime');
+  if (periodEl) periodEl.textContent = getDayLabel(dateStr);
+  if (timeEl) timeEl.textContent = total > 0 ? formatTime(total) : '—';
+
+  renderBarChart();
+  renderMostUsed();
 }
 
 async function toggleScreenTime(): Promise<void> {
