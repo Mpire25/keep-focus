@@ -18,17 +18,22 @@ function pruneOldScreenTimeEntries(history: ScreenTimeHistory): void {
   });
 }
 
+// Serialise all screen-time writes so concurrent messages from multiple tabs
+// can't interleave their read-modify-write cycles.
+let screenTimeWriteQueue: Promise<void> = Promise.resolve();
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'SCREEN_TIME_ADD') {
     const { domain, elapsed, date } = message as { domain: string; elapsed: number; date: string };
-    chrome.storage.local.get(['screenTimeHistory']).then(result => {
+    screenTimeWriteQueue = screenTimeWriteQueue.then(async () => {
+      const result = await chrome.storage.local.get(['screenTimeHistory']);
       const history = (result.screenTimeHistory as ScreenTimeHistory) || {};
       if (!history[date]) history[date] = {};
       history[date][domain] = (history[date][domain] || 0) + elapsed;
       pruneOldScreenTimeEntries(history);
-      return chrome.storage.local.set({ screenTimeHistory: history });
-    }).then(() => sendResponse({ ok: true }))
-      .catch(() => sendResponse({ ok: false }));
+      await chrome.storage.local.set({ screenTimeHistory: history });
+    }).catch(() => {});
+    screenTimeWriteQueue.then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }));
     return true; // keep channel open for async response
   }
 });
