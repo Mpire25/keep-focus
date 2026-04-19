@@ -140,8 +140,13 @@ function renderMostUsed(): void {
   const dateStr = selectedHistoryDate ?? today;
   const entry = screenTimeHistory[dateStr];
 
+  container.replaceChildren();
+
   if (!entry || Object.keys(entry).length === 0) {
-    container.innerHTML = '<p class="empty-state-text">No activity recorded.</p>';
+    const empty = document.createElement('p');
+    empty.className = 'empty-state-text';
+    empty.textContent = 'No activity recorded.';
+    container.appendChild(empty);
     return;
   }
 
@@ -153,7 +158,7 @@ function renderMostUsed(): void {
   const prevDateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
   const prevEntry = screenTimeHistory[prevDateStr] ?? {};
 
-  container.innerHTML = sorted.map(([domain, ms], i) => {
+  sorted.forEach(([domain, ms], i) => {
     const color = SITE_COLORS[i % SITE_COLORS.length];
     const widthPct = ((ms / maxMs) * 100).toFixed(1);
     const prevMs = prevEntry[domain];
@@ -164,32 +169,68 @@ function renderMostUsed(): void {
       deltaCls = delta > 0 ? 'up' : 'down';
       deltaText = `${delta > 0 ? '↑' : '↓'} ${formatTime(Math.abs(delta))}`;
     }
-    return `<div class="st-site-item">
-      <div class="st-site-favicon-wrap">
-        <img class="st-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" alt="">
-        <div class="st-site-dot" hidden style="background:${color}"></div>
-      </div>
-      <div class="st-site-info">
-        <div class="st-site-top">
-          <span class="st-site-name">${domain}</span>
-          <div class="st-site-right">
-            <span class="st-site-time">${formatTime(ms)}</span>
-            <span class="st-site-delta ${deltaCls}">${deltaText}</span>
-          </div>
-        </div>
-        <div class="st-site-bar-track">
-          <div class="st-site-bar-fill" style="width:${widthPct}%;background:${color}"></div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+    const item = document.createElement('div');
+    item.className = 'st-site-item';
 
-  container.querySelectorAll('.st-favicon').forEach(img => {
-    img.addEventListener('error', () => {
-      (img as HTMLImageElement).hidden = true;
-      const dot = img.nextElementSibling as HTMLElement | null;
-      if (dot) dot.hidden = false;
+    const faviconWrap = document.createElement('div');
+    faviconWrap.className = 'st-site-favicon-wrap';
+
+    const favicon = document.createElement('img');
+    favicon.className = 'st-favicon';
+    favicon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+    favicon.alt = '';
+
+    const dot = document.createElement('div');
+    dot.className = 'st-site-dot';
+    dot.hidden = true;
+    dot.style.background = color;
+
+    favicon.addEventListener('error', () => {
+      favicon.hidden = true;
+      dot.hidden = false;
     });
+
+    const siteInfo = document.createElement('div');
+    siteInfo.className = 'st-site-info';
+
+    const siteTop = document.createElement('div');
+    siteTop.className = 'st-site-top';
+
+    const siteName = document.createElement('span');
+    siteName.className = 'st-site-name';
+    siteName.textContent = domain;
+
+    const siteRight = document.createElement('div');
+    siteRight.className = 'st-site-right';
+
+    const siteTime = document.createElement('span');
+    siteTime.className = 'st-site-time';
+    siteTime.textContent = formatTime(ms);
+
+    const siteDelta = document.createElement('span');
+    siteDelta.className = `st-site-delta${deltaCls ? ` ${deltaCls}` : ''}`;
+    siteDelta.textContent = deltaText;
+
+    const siteBarTrack = document.createElement('div');
+    siteBarTrack.className = 'st-site-bar-track';
+
+    const siteBarFill = document.createElement('div');
+    siteBarFill.className = 'st-site-bar-fill';
+    siteBarFill.style.width = `${widthPct}%`;
+    siteBarFill.style.background = color;
+
+    siteBarTrack.appendChild(siteBarFill);
+    siteRight.appendChild(siteTime);
+    siteRight.appendChild(siteDelta);
+    siteTop.appendChild(siteName);
+    siteTop.appendChild(siteRight);
+    siteInfo.appendChild(siteTop);
+    siteInfo.appendChild(siteBarTrack);
+    faviconWrap.appendChild(favicon);
+    faviconWrap.appendChild(dot);
+    item.appendChild(faviconWrap);
+    item.appendChild(siteInfo);
+    container.appendChild(item);
   });
 }
 

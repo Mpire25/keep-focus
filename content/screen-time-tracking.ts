@@ -82,7 +82,7 @@ function stopInterval(): void {
   }
   screenTimeStartTime = null;
   if (pendingElapsed > 0) {
-    flushToStorage();
+    void flushToStorage();
   }
 }
 
@@ -122,6 +122,12 @@ export async function initScreenTimeTracking(): Promise<void> {
       isWindowFocused = false;
       stopInterval();
     });
+
+    // Extra unload safety: capture final elapsed time as the page is being discarded.
+    window.addEventListener('pagehide', () => {
+      if (!isTracking) return;
+      stopInterval();
+    });
   } catch {
     // Ignore errors
   }
@@ -131,6 +137,4 @@ export function stopScreenTimeTracking(): void {
   isTracking = false;
   stopInterval();
   currentDomain = null;
-  pendingElapsed = 0;
-  lastFlushTime = 0;
 }
