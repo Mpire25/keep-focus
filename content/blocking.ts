@@ -86,7 +86,6 @@ export async function checkAndBlockSite(): Promise<void> {
   }
   const blockedSites: BlockedSite[] = result.blockedSites || [];
   const unlockedUntil: UnlockedUntil = result.unlockedUntil || {};
-  const focusStreak: number = result.focusStreak || 0;
   const timeLimits: TimeLimit[] = result.timeLimits || [];
   const timeTracking: TimeTracking = result.timeTracking || {};
 
@@ -122,33 +121,10 @@ export async function checkAndBlockSite(): Promise<void> {
 
     // Site is blocked - stop unlock expiration check and show overlay
     stopUnlockExpirationCheck();
-    // Increment streak if they closed the tab last time instead of unlocking
-    // We track this by checking if there's no recent unlock for this site
-    // Only increment if it's been a while since last unlock (they likely closed tab)
-    const lastUnlockTime = unlockTimestamp || 0;
-    const timeSinceLastUnlock = now - lastUnlockTime;
-    const STREAK_INCREMENT_THRESHOLD = 60 * 60 * 1000; // 1 hour - if they come back after this, they likely closed tab
-    const UNLOCK_WINDOW = 10 * 60 * 1000; // 10 minutes - unlock window
-    
-    let newStreak = focusStreak;
-    // Only increment streak if they haven't unlocked recently (outside unlock window + threshold)
-    if (!unlockTimestamp || timeSinceLastUnlock > (UNLOCK_WINDOW + STREAK_INCREMENT_THRESHOLD)) {
-      // They likely closed the tab last time - increment streak
-      newStreak = focusStreak + 1;
-      try {
-        await setStorageData({ focusStreak: newStreak });
-      } catch (error) {
-        // Extension context invalidated - ignore, continue with current streak
-        const err = error as Error;
-        if (err.message && err.message.includes('Extension context invalidated')) {
-          newStreak = focusStreak;
-        }
-      }
-    }
-    
+
     // Import overlay dynamically to avoid circular dependency
     const { showBlockOverlay } = await import('./overlay-block.js');
-    await showBlockOverlay(normalizedUrl, siteKey, newStreak);
+    await showBlockOverlay(normalizedUrl, siteKey);
     return;
   }
 

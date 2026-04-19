@@ -375,3 +375,249 @@ body.dark-mode .sidebar-tab-button.active {
 .empty-state {
   padding: 60px 20px;
 }
+
+/* ── Screen Time (Apple-style) ───────────────────────────── */
+
+.screen-time-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Screen Time page-title: flex to position toggle on the right */
+#screen-time-tab .page-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Summary card */
+.st-summary-card {
+  padding: 28px 32px 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.st-summary-period {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.st-summary-time {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.st-summary-avg {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  margin-bottom: 20px;
+  min-height: 18px;
+}
+
+/* Bar chart */
+.st-bar-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  height: 96px;
+}
+
+.st-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.st-bar-col:hover .st-bar-fill {
+  opacity: 0.75;
+}
+
+.st-bar-col.selected:hover .st-bar-fill {
+  opacity: 1;
+}
+
+.st-bar-track {
+  flex: 1;
+  width: 100%;
+  background: var(--border-color);
+  border-radius: 5px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.st-bar-fill {
+  width: 100%;
+  border-radius: 5px;
+  background: var(--text-tertiary);
+  opacity: 0.45;
+  transition: height 0.35s ease, opacity 0.15s;
+}
+
+.st-bar-col.selected .st-bar-fill {
+  background: var(--accent-color);
+  opacity: 1;
+}
+
+.st-bar-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  height: 16px;
+  line-height: 16px;
+  flex-shrink: 0;
+}
+
+.st-bar-label.today {
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.st-bar-col.selected .st-bar-label {
+  color: var(--accent-color);
+}
+
+/* Most Used section */
+.st-section {
+  padding: 24px 32px 32px 32px;
+}
+
+.st-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-tertiary);
+  margin-bottom: 20px;
+}
+
+.st-most-used-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.st-site-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.st-site-favicon-wrap {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.st-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+  display: block;
+}
+
+.st-site-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.st-site-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.st-site-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.st-site-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.st-site-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: 1px;
+}
+
+.st-site-time {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.st-site-delta {
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+  color: var(--text-secondary);
+  min-height: 14px;
+  display: block;
+}
+
+.st-site-delta.up { color: #c0524a; }
+.st-site-delta.down { color: #4a9e6e; }
+
+.st-site-bar-track {
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.st-site-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  opacity: 0.85;
+}
+
+/* Disabled state */
+.st-disabled-state {
+  padding: 48px 32px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.empty-state-text {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 0;
+  padding: 8px 0;
+}

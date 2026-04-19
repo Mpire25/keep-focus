@@ -13,15 +13,16 @@ A Chrome extension that blocks distracting websites and enforces daily time limi
 - **Friction on unlock**: Must type a reason + wait a randomized 15–30 second timer before accessing a blocked site
 - **Temporary access**: Unlocked sites stay open for 10 minutes, then relock
 - **YouTube element blocking**: Toggle off Shorts, suggested videos, ads, comments, or enable minimal mode (all at once)
+- **Screen Time tracking**: Apple-style dashboard showing a 7-day bar chart, daily total, daily average, and a Most Used list with favicons and per-site comparison to the previous day
 - **Dark mode**
 
 ## Installation
 
 1. Clone the repo
-2. `npm install && npm run build`
+2. `bun install && bun run build`
 3. Go to `chrome://extensions/`, enable Developer mode, click "Load unpacked", select the `keep-focus` folder
 
-Run `npm run watch` during development to auto-rebuild on file changes.
+Run `bun run watch` during development to auto-rebuild on file changes.
 
 ## Usage
 
@@ -34,9 +35,9 @@ When you hit a blocked site or time limit, type a reason and wait out the timer.
 ## Development
 
 ```
-npm run build       # compile TypeScript to dist/
-npm run watch       # auto-rebuild on changes
-npm run type-check  # type check only
+bun run build       # compile TypeScript to dist/
+bun run watch       # auto-rebuild on changes
+bun run type-check  # type check only
 ```
 
 After rebuilding, reload the extension in `chrome://extensions/`.

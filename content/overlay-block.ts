@@ -1,13 +1,12 @@
 // Show the blocking overlay
 
-import { getStorageData, setStorageData } from '../utils/storage-utils.js';
+import { getLocalData, setLocalData } from '../utils/storage-utils.js';
 import { showInteractiveOverlay } from './overlay-flow.js';
 
 const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
 
-export async function showBlockOverlay(normalizedUrl: string, siteKey: string, currentStreak: number): Promise<void> {
+export async function showBlockOverlay(normalizedUrl: string, siteKey: string): Promise<void> {
   void normalizedUrl;
-  void currentStreak;
 
   await showInteractiveOverlay({
     heading: 'You said you wanted to focus.',
@@ -17,15 +16,11 @@ export async function showBlockOverlay(normalizedUrl: string, siteKey: string, c
     showMoreTimeButton: false,
     onContinue: async () => {
       try {
-        const result = await getStorageData(['unlockedUntil', 'focusStreak']);
+        const result = await getLocalData(['unlockedUntil']);
         const unlockedUntil = (result.unlockedUntil as Record<string, number>) || {};
         unlockedUntil[siteKey] = Date.now() + UNLOCK_DURATION;
 
-        // Reset streak when user unlocks (they chose to visit)
-        await setStorageData({
-          unlockedUntil,
-          focusStreak: 0
-        });
+        await setLocalData({ unlockedUntil });
 
         window.location.reload();
       } catch (error) {

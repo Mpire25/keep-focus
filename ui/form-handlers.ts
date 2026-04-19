@@ -2,7 +2,7 @@
 
 import { validateUrl, normalizeUrl } from '../utils/url-utils.js';
 import { getCurrentDateString } from '../utils/time-utils.js';
-import { getAllData, setStorageData } from '../utils/storage-utils.js';
+import { getAllData, setStorageData, setLocalData } from '../utils/storage-utils.js';
 import type { BlockedSite, TimeLimit, TimeTracking, FormResult, UnlockedUntil } from '../types/index.js';
 
 // Show error message
@@ -153,7 +153,7 @@ export async function removeSiteByUrl(url: string, blockedSites: BlockedSite[]):
       
       // Save updated unlockedUntil if any changes were made
       if (updated) {
-        await setStorageData({ unlockedUntil });
+        await setLocalData({ unlockedUntil });
       }
     } catch (error) {
       // Error cleaning up unlockedUntil, but continue with removal
@@ -230,7 +230,7 @@ export async function addTimeLimit(timeLimits: TimeLimit[], timeTracking: TimeTr
     minutesInput.value = '';
   }
   clearTimeLimitError();
-  await setStorageData({ timeLimits, timeTracking });
+  await Promise.all([setStorageData({ timeLimits }), setLocalData({ timeTracking })]);
   return { success: true, timeLimits, timeTracking };
 }
 
@@ -239,13 +239,13 @@ export async function removeTimeLimit(url: string, timeLimits: TimeLimit[], time
   const index = timeLimits.findIndex(limitObj => limitObj.url === url);
   if (index !== -1) {
     timeLimits.splice(index, 1);
-    
+
     // Also remove from timeTracking if it exists
     if (timeTracking[url]) {
       delete timeTracking[url];
     }
-    
-    await setStorageData({ timeLimits, timeTracking });
+
+    await Promise.all([setStorageData({ timeLimits }), setLocalData({ timeTracking })]);
     return { success: true, timeLimits, timeTracking };
   }
   return { success: false, timeLimits, timeTracking };

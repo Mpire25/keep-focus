@@ -1,6 +1,6 @@
 // Show the time limit blocking overlay
 
-import { getStorageData, setStorageData } from '../utils/storage-utils.js';
+import { getStorageData, getLocalData, setLocalData } from '../utils/storage-utils.js';
 import { getCurrentDateString } from '../utils/time-utils.js';
 import { showInteractiveOverlay } from './overlay-flow.js';
 import type { TimeLimit, TimeTracking } from '../types/index.js';
@@ -18,9 +18,12 @@ export async function showTimeLimitOverlay(normalizedUrl: string, siteKey: strin
     moreTimeButtonLabel: 'More Time',
     onContinue: async () => {
       try {
-        const result = await getStorageData(['timeTracking', 'timeLimits']);
-        const timeTracking = (result.timeTracking as TimeTracking) || {};
-        const timeLimits = (result.timeLimits as TimeLimit[]) || [];
+        const [localResult, syncResult] = await Promise.all([
+          getLocalData(['timeTracking']),
+          getStorageData(['timeLimits'])
+        ]);
+        const timeTracking = (localResult.timeTracking as TimeTracking) || {};
+        const timeLimits = (syncResult.timeLimits as TimeLimit[]) || [];
 
         const limitObj = timeLimits.find(l => l.url === siteKey);
         const limitMs = limitObj ? limitObj.limitMinutes * 60 * 1000 : 0;
@@ -45,7 +48,7 @@ export async function showTimeLimitOverlay(normalizedUrl: string, siteKey: strin
             timeTracking[siteKey].lastActive = Date.now();
           }
 
-          await setStorageData({ timeTracking });
+          await setLocalData({ timeTracking });
         }
 
         // Reload the page to resume tracking

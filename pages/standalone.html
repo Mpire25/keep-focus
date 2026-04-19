@@ -25,6 +25,7 @@
           <button class="sidebar-tab-button active" data-tab="blocked-sites">Blocked Sites</button>
           <button class="sidebar-tab-button" data-tab="screen-limits">Screen Limits</button>
           <button class="sidebar-tab-button" data-tab="element-blocking">Element Blocking</button>
+          <button class="sidebar-tab-button" data-tab="screen-time">Screen Time</button>
           <button class="sidebar-tab-button" data-tab="settings">Settings</button>
         </nav>
       </div>
@@ -154,6 +155,37 @@
                   </label>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Screen Time Tab -->
+        <div class="tab-content" id="screen-time-tab">
+          <h2 class="page-title">Screen Time
+            <label class="toggle-switch-label" title="Enable Screen Time tracking">
+              <div class="toggle-switch">
+                <input type="checkbox" id="screenTimeToggle">
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+          </h2>
+          <div class="screen-time-scroll-area">
+            <div id="screenTimeContent" style="display:none;">
+              <div class="st-summary-card">
+                <div class="st-summary-period" id="stSummaryPeriod">Today</div>
+                <div class="st-summary-time" id="stSummaryTime">—</div>
+                <div class="st-summary-avg" id="stSummaryAvg"></div>
+                <div class="st-bar-chart" id="stBarChart"></div>
+              </div>
+              <div class="st-section">
+                <h3 class="st-section-title">Most Used</h3>
+                <div id="stMostUsedList" class="st-most-used-list">
+                  <p class="empty-state-text">No activity recorded.</p>
+                </div>
+              </div>
+            </div>
+            <div id="screenTimeDisabled" class="st-disabled-state">
+              Enable Screen Time tracking above to see your browsing usage.
             </div>
           </div>
         </div>

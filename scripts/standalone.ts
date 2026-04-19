@@ -1,19 +1,22 @@
 // Standalone page UI for managing blocked sites
 
-import { getAllData, setStorageData } from '../utils/storage-utils.js';
+import { getAllData, setStorageData, setLocalData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
-import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule } from '../types/index.js';
+import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule, ScreenTimeHistory } from '../types/index.js';
+import { formatTime, getCurrentDateString } from '../utils/time-utils.js';
 import { YOUTUBE_SELECTORS } from '../content/element-blocking.js';
 import { updateExtensionIcon } from '../utils/icon-utils.js';
 
 let blockedSites: BlockedSite[] = [];
-let focusStreak = 0;
 let darkMode = false;
 let timeLimits: TimeLimit[] = [];
 let timeTracking: TimeTracking = {};
 let elementBlockingRules: ElementBlockingRule[] = [];
 let pendingRuleMigrationSave = false;
+let screenTimeEnabled = false;
+let screenTimeHistory: ScreenTimeHistory = {};
+let selectedHistoryDate: string | null = null;
 
 const LEGACY_YOUTUBE_SELECTORS: Partial<Record<keyof typeof YOUTUBE_SELECTORS, string[]>> = {
   suggestedVideos: [
@@ -47,19 +50,226 @@ async function loadData(): Promise<void> {
   try {
     const result = await getAllData();
     blockedSites = result.blockedSites || [];
-    focusStreak = result.focusStreak || 0;
     darkMode = result.darkMode || false;
     timeLimits = result.timeLimits || [];
     timeTracking = result.timeTracking || {};
     elementBlockingRules = result.elementBlockingRules || [];
+    screenTimeEnabled = result.screenTimeEnabled || false;
+    screenTimeHistory = result.screenTimeHistory || {};
     applyDarkMode();
     renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
     renderTimeLimitsList(timeLimits, timeTracking, 'timeLimitsList', 'timeLimitsListWrapper');
     renderElementBlockingUI();
+    renderScreenTimeSection();
     attachRemoveListeners();
   } catch (error) {
     // Silently handle errors
   }
+}
+
+const SITE_COLORS = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#F7B731',
+  '#A29BFE', '#FD79A8', '#55EFC4', '#FDCB6E', '#74B9FF',
+];
+
+function getLast7Days(): string[] {
+  const days: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    );
+  }
+  return days;
+}
+
+function getDayTotalMs(dateStr: string): number {
+  const entry = screenTimeHistory[dateStr];
+  if (!entry) return 0;
+  return Object.values(entry).reduce((a, b) => a + b, 0);
+}
+
+function getDayLabel(dateStr: string): string {
+  const today = getCurrentDateString();
+  if (dateStr === today) return 'Today';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function getDayLetter(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 1);
+}
+
+function renderBarChart(): void {
+  const container = document.getElementById('stBarChart');
+  if (!container) return;
+
+  const days = getLast7Days();
+  const totals = days.map(d => getDayTotalMs(d));
+  const maxTotal = Math.max(...totals, 1);
+  const today = getCurrentDateString();
+  const selected = selectedHistoryDate ?? today;
+
+  container.innerHTML = days.map((dateStr, i) => {
+    const total = totals[i];
+    const heightPct = total > 0 ? Math.max((total / maxTotal) * 100, 8) : 0;
+    const isSelected = dateStr === selected;
+    const isToday = dateStr === today;
+    return `<div class="st-bar-col${isSelected ? ' selected' : ''}" data-date="${dateStr}">
+      <div class="st-bar-track"><div class="st-bar-fill" style="height:${heightPct}%"></div></div>
+      <div class="st-bar-label${isToday ? ' today' : ''}">${getDayLetter(dateStr)}</div>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('.st-bar-col').forEach(col => {
+    col.addEventListener('click', () => {
+      const dateStr = (col as HTMLElement).dataset.date!;
+      selectedHistoryDate = dateStr === today ? null : dateStr;
+      renderScreenTimeSection();
+    });
+  });
+}
+
+function renderMostUsed(): void {
+  const container = document.getElementById('stMostUsedList');
+  if (!container) return;
+
+  const today = getCurrentDateString();
+  const dateStr = selectedHistoryDate ?? today;
+  const entry = screenTimeHistory[dateStr];
+
+  container.replaceChildren();
+
+  if (!entry || Object.keys(entry).length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state-text';
+    empty.textContent = 'No activity recorded.';
+    container.appendChild(empty);
+    return;
+  }
+
+  const sorted = Object.entries(entry).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const maxMs = sorted[0][1];
+
+  const prevDate = new Date(dateStr + 'T00:00:00');
+  prevDate.setDate(prevDate.getDate() - 1);
+  const prevDateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
+  const prevEntry = screenTimeHistory[prevDateStr] ?? {};
+
+  sorted.forEach(([domain, ms], i) => {
+    const color = SITE_COLORS[i % SITE_COLORS.length];
+    const widthPct = ((ms / maxMs) * 100).toFixed(1);
+    const prevMs = prevEntry[domain];
+    let deltaCls = '';
+    let deltaText = '';
+    if (prevMs !== undefined && ms !== prevMs) {
+      const delta = ms - prevMs;
+      deltaCls = delta > 0 ? 'up' : 'down';
+      deltaText = `${delta > 0 ? '↑' : '↓'} ${formatTime(Math.abs(delta))}`;
+    }
+    const item = document.createElement('div');
+    item.className = 'st-site-item';
+
+    const faviconWrap = document.createElement('div');
+    faviconWrap.className = 'st-site-favicon-wrap';
+
+    const favicon = document.createElement('img');
+    favicon.className = 'st-favicon';
+    favicon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+    favicon.alt = '';
+
+    const dot = document.createElement('div');
+    dot.className = 'st-site-dot';
+    dot.hidden = true;
+    dot.style.background = color;
+
+    favicon.addEventListener('error', () => {
+      favicon.hidden = true;
+      dot.hidden = false;
+    });
+
+    const siteInfo = document.createElement('div');
+    siteInfo.className = 'st-site-info';
+
+    const siteTop = document.createElement('div');
+    siteTop.className = 'st-site-top';
+
+    const siteName = document.createElement('span');
+    siteName.className = 'st-site-name';
+    siteName.textContent = domain;
+
+    const siteRight = document.createElement('div');
+    siteRight.className = 'st-site-right';
+
+    const siteTime = document.createElement('span');
+    siteTime.className = 'st-site-time';
+    siteTime.textContent = formatTime(ms);
+
+    const siteDelta = document.createElement('span');
+    siteDelta.className = `st-site-delta${deltaCls ? ` ${deltaCls}` : ''}`;
+    siteDelta.textContent = deltaText;
+
+    const siteBarTrack = document.createElement('div');
+    siteBarTrack.className = 'st-site-bar-track';
+
+    const siteBarFill = document.createElement('div');
+    siteBarFill.className = 'st-site-bar-fill';
+    siteBarFill.style.width = `${widthPct}%`;
+    siteBarFill.style.background = color;
+
+    siteBarTrack.appendChild(siteBarFill);
+    siteRight.appendChild(siteTime);
+    siteRight.appendChild(siteDelta);
+    siteTop.appendChild(siteName);
+    siteTop.appendChild(siteRight);
+    siteInfo.appendChild(siteTop);
+    siteInfo.appendChild(siteBarTrack);
+    faviconWrap.appendChild(favicon);
+    faviconWrap.appendChild(dot);
+    item.appendChild(faviconWrap);
+    item.appendChild(siteInfo);
+    container.appendChild(item);
+  });
+}
+
+function renderScreenTimeSection(): void {
+  const toggle = document.getElementById('screenTimeToggle') as HTMLInputElement | null;
+  if (toggle) toggle.checked = screenTimeEnabled;
+
+  const content = document.getElementById('screenTimeContent');
+  const disabledEl = document.getElementById('screenTimeDisabled');
+  if (content) content.style.display = screenTimeEnabled ? '' : 'none';
+  if (disabledEl) disabledEl.style.display = screenTimeEnabled ? 'none' : '';
+
+  if (!screenTimeEnabled) return;
+
+  const today = getCurrentDateString();
+  const dateStr = selectedHistoryDate ?? today;
+  const total = getDayTotalMs(dateStr);
+
+  const days7 = getLast7Days();
+  const daysWithData = days7.filter(d => getDayTotalMs(d) > 0);
+  const avgMs = daysWithData.length > 0
+    ? daysWithData.reduce((sum, d) => sum + getDayTotalMs(d), 0) / days7.length
+    : 0;
+
+  const periodEl = document.getElementById('stSummaryPeriod');
+  const timeEl = document.getElementById('stSummaryTime');
+  const avgEl = document.getElementById('stSummaryAvg');
+  if (periodEl) periodEl.textContent = getDayLabel(dateStr);
+  if (timeEl) timeEl.textContent = total > 0 ? formatTime(total) : '—';
+  if (avgEl) avgEl.textContent = avgMs > 0 ? `${formatTime(Math.round(avgMs))} daily avg` : '';
+
+  renderBarChart();
+  renderMostUsed();
+}
+
+async function toggleScreenTime(): Promise<void> {
+  screenTimeEnabled = !screenTimeEnabled;
+  await setLocalData({ screenTimeEnabled });
+  renderScreenTimeSection();
 }
 
 // Attach remove button listeners
@@ -382,6 +592,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (darkModeToggle) {
     darkModeToggle.addEventListener('change', toggleDarkMode);
   }
+
+  const screenTimeToggle = document.getElementById('screenTimeToggle') as HTMLInputElement | null;
+  if (screenTimeToggle) {
+    screenTimeToggle.addEventListener('change', toggleScreenTime);
+  }
   
   // YouTube element blocking toggles
   const youtubeToggles = [
@@ -401,6 +616,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
+  // Refresh screen time view when storage updates (e.g. tracking in another tab)
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes.screenTimeHistory) {
+      screenTimeHistory = (changes.screenTimeHistory.newValue as ScreenTimeHistory) || {};
+      renderScreenTimeSection();
+    }
+    if (changes.screenTimeEnabled) {
+      screenTimeEnabled = changes.screenTimeEnabled.newValue as boolean || false;
+      renderScreenTimeSection();
+    }
+  });
+
   if (siteInput) {
     siteInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {

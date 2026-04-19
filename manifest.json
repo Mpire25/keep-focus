@@ -6,13 +6,15 @@
   "permissions": [
     "storage",
     "tabs",
-    "scripting"
+    "scripting",
+    "favicon"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "dist/scripts/background.js"
+    "service_worker": "dist/scripts/background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "pages/popup.html",
