@@ -154,7 +154,10 @@ function renderMostUsed(): void {
     const color = SITE_COLORS[i % SITE_COLORS.length];
     const widthPct = ((ms / maxMs) * 100).toFixed(1);
     return `<div class="st-site-item">
-      <div class="st-site-dot" style="background:${color}"></div>
+      <div class="st-site-favicon-wrap">
+        <img class="st-favicon" src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" alt="">
+        <div class="st-site-dot" hidden style="background:${color}"></div>
+      </div>
       <div class="st-site-info">
         <div class="st-site-top">
           <span class="st-site-name">${domain}</span>
@@ -166,6 +169,14 @@ function renderMostUsed(): void {
       </div>
     </div>`;
   }).join('');
+
+  container.querySelectorAll('.st-favicon').forEach(img => {
+    img.addEventListener('error', () => {
+      (img as HTMLImageElement).hidden = true;
+      const dot = img.nextElementSibling as HTMLElement | null;
+      if (dot) dot.hidden = false;
+    });
+  });
 }
 
 function renderScreenTimeSection(): void {
