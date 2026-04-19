@@ -413,7 +413,15 @@ body.dark-mode .sidebar-tab-button.active {
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  margin-bottom: 6px;
+}
+
+.st-summary-avg {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-weight: 500;
   margin-bottom: 20px;
+  min-height: 18px;
 }
 
 /* Bar chart */

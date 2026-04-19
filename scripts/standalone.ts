@@ -194,10 +194,18 @@ function renderScreenTimeSection(): void {
   const dateStr = selectedHistoryDate ?? today;
   const total = getDayTotalMs(dateStr);
 
+  const days7 = getLast7Days();
+  const daysWithData = days7.filter(d => getDayTotalMs(d) > 0);
+  const avgMs = daysWithData.length > 0
+    ? daysWithData.reduce((sum, d) => sum + getDayTotalMs(d), 0) / days7.length
+    : 0;
+
   const periodEl = document.getElementById('stSummaryPeriod');
   const timeEl = document.getElementById('stSummaryTime');
+  const avgEl = document.getElementById('stSummaryAvg');
   if (periodEl) periodEl.textContent = getDayLabel(dateStr);
   if (timeEl) timeEl.textContent = total > 0 ? formatTime(total) : '—';
+  if (avgEl) avgEl.textContent = avgMs > 0 ? `${formatTime(Math.round(avgMs))} daily avg` : '';
 
   renderBarChart();
   renderMostUsed();
