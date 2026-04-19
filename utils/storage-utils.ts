@@ -8,7 +8,6 @@ export async function getAllData(): Promise<ExtensionData> {
     const result = await chrome.storage.sync.get([
       'blockedSites',
       'unlockedUntil',
-      'focusStreak',
       'timeLimits',
       'timeTracking',
       'darkMode',
@@ -19,7 +18,6 @@ export async function getAllData(): Promise<ExtensionData> {
     return {
       blockedSites: result.blockedSites || [],
       unlockedUntil: result.unlockedUntil || {},
-      focusStreak: result.focusStreak || 0,
       timeLimits: result.timeLimits || [],
       timeTracking: result.timeTracking || {},
       darkMode: result.darkMode || false,
@@ -34,7 +32,6 @@ export async function getAllData(): Promise<ExtensionData> {
       return {
         blockedSites: [],
         unlockedUntil: {},
-        focusStreak: 0,
         timeLimits: [],
         timeTracking: {},
         darkMode: false,
@@ -61,8 +58,6 @@ export async function getStorageData(keys: string[]): Promise<Record<string, unk
           defaults[key] = [];
         } else if (key === 'unlockedUntil' || key === 'timeTracking') {
           defaults[key] = {};
-        } else if (key === 'focusStreak') {
-          defaults[key] = 0;
         } else if (key === 'darkMode') {
           defaults[key] = false;
         } else {

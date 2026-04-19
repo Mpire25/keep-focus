@@ -36,7 +36,6 @@ export type ScreenTimeHistory = Record<string, ScreenTimeDayEntry>;
 export interface ExtensionData {
   blockedSites: BlockedSite[];
   unlockedUntil: UnlockedUntil;
-  focusStreak: number;
   timeLimits: TimeLimit[];
   timeTracking: TimeTracking;
   darkMode: boolean;

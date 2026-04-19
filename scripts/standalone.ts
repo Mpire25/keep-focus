@@ -9,7 +9,6 @@ import { YOUTUBE_SELECTORS } from '../content/element-blocking.js';
 import { updateExtensionIcon } from '../utils/icon-utils.js';
 
 let blockedSites: BlockedSite[] = [];
-let focusStreak = 0;
 let darkMode = false;
 let timeLimits: TimeLimit[] = [];
 let timeTracking: TimeTracking = {};
@@ -51,7 +50,6 @@ async function loadData(): Promise<void> {
   try {
     const result = await getAllData();
     blockedSites = result.blockedSites || [];
-    focusStreak = result.focusStreak || 0;
     darkMode = result.darkMode || false;
     timeLimits = result.timeLimits || [];
     timeTracking = result.timeTracking || {};
