@@ -1,6 +1,6 @@
 // Show the blocking overlay
 
-import { getStorageData, setStorageData } from '../utils/storage-utils.js';
+import { getLocalData, setLocalData } from '../utils/storage-utils.js';
 import { showInteractiveOverlay } from './overlay-flow.js';
 
 const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -16,11 +16,11 @@ export async function showBlockOverlay(normalizedUrl: string, siteKey: string): 
     showMoreTimeButton: false,
     onContinue: async () => {
       try {
-        const result = await getStorageData(['unlockedUntil']);
+        const result = await getLocalData(['unlockedUntil']);
         const unlockedUntil = (result.unlockedUntil as Record<string, number>) || {};
         unlockedUntil[siteKey] = Date.now() + UNLOCK_DURATION;
 
-        await setStorageData({ unlockedUntil });
+        await setLocalData({ unlockedUntil });
 
         window.location.reload();
       } catch (error) {

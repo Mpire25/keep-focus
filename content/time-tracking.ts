@@ -2,7 +2,7 @@
 
 import { getTimeLimitSiteKey } from '../utils/url-utils.js';
 import { getCurrentDateString } from '../utils/time-utils.js';
-import { getStorageData, setStorageData } from '../utils/storage-utils.js';
+import { getStorageData, getLocalData, setLocalData } from '../utils/storage-utils.js';
 import type { TimeLimit, TimeTracking, TimeTrackingData } from '../types/index.js';
 
 // Global variables for time tracking
@@ -21,7 +21,7 @@ function pauseTimeTracking(): void {
   if (currentSiteKey && timeTrackingStartTime) {
     const elapsed = Date.now() - timeTrackingStartTime;
     if (elapsed > 0) {
-      getStorageData(['timeTracking']).then(result => {
+      getLocalData(['timeTracking']).then(result => {
         const tracking = (result.timeTracking as TimeTracking) || {};
         if (tracking[currentSiteKey!]) {
           const currentDate = getCurrentDateString();
@@ -31,7 +31,7 @@ function pauseTimeTracking(): void {
             tracking[currentSiteKey!].timeSpent = (tracking[currentSiteKey!].timeSpent || 0) + elapsed;
             tracking[currentSiteKey!].lastActive = Date.now();
           }
-          setStorageData({ timeTracking: tracking }).catch(() => {});
+          setLocalData({ timeTracking: tracking }).catch(() => {});
         }
       }).catch(() => {});
     }
@@ -42,7 +42,7 @@ function pauseTimeTracking(): void {
 // Resume interval after a focus/visibility pause
 function resumeTimeTracking(): void {
   if (!currentSiteKey || timeTrackingInterval !== null) return;
-  getStorageData(['timeTracking']).then(result => {
+  getLocalData(['timeTracking']).then(result => {
     const tracking = (result.timeTracking as TimeTracking) || {};
     if (currentSiteKey) {
       startTimeTracking(currentSiteKey, tracking);
@@ -125,9 +125,12 @@ export function startTimeTracking(siteKey: string, timeTracking: TimeTracking): 
       }
       
       // Get current tracking data
-      const result = await getStorageData(['timeTracking', 'timeLimits']);
-      const currentTimeTracking = (result.timeTracking as TimeTracking) || {};
-      const timeLimits = (result.timeLimits as TimeLimit[]) || [];
+      const [localResult, syncResult] = await Promise.all([
+        getLocalData(['timeTracking']),
+        getStorageData(['timeLimits'])
+      ]);
+      const currentTimeTracking = (localResult.timeTracking as TimeTracking) || {};
+      const timeLimits = (syncResult.timeLimits as TimeLimit[]) || [];
       
       // Check if site still has time limit
       const limitSiteKey = getTimeLimitSiteKey(normalizedUrl, timeLimits);
@@ -171,7 +174,7 @@ export function startTimeTracking(siteKey: string, timeTracking: TimeTracking): 
           if (currentTimeTracking[siteKey].timeSpent >= limitMs) {
             // Limit exceeded - stop tracking and show blocking page
             stopTimeTracking();
-            await setStorageData({ timeTracking: currentTimeTracking });
+            await setLocalData({ timeTracking: currentTimeTracking });
             // Import dynamically to avoid circular dependency
             const { showTimeLimitOverlay } = await import('./overlay-time-limit.js');
             showTimeLimitOverlay(normalizedUrl, siteKey, limitObj.limitMinutes);
@@ -180,7 +183,7 @@ export function startTimeTracking(siteKey: string, timeTracking: TimeTracking): 
         }
         
         // Save updated tracking
-        await setStorageData({ timeTracking: currentTimeTracking });
+        await setLocalData({ timeTracking: currentTimeTracking });
       }
     } catch (error) {
       // Extension context invalidated or other error - stop tracking
@@ -204,7 +207,7 @@ export function stopTimeTracking(): void {
   // Save final time if we were tracking
   if (currentSiteKey && timeTrackingStartTime) {
     const elapsed = Date.now() - timeTrackingStartTime;
-    getStorageData(['timeTracking']).then(result => {
+    getLocalData(['timeTracking']).then(result => {
       const timeTracking = (result.timeTracking as TimeTracking) || {};
       if (timeTracking[currentSiteKey!]) {
         const currentDate = getCurrentDateString();
@@ -218,7 +221,7 @@ export function stopTimeTracking(): void {
           timeTracking[currentSiteKey!].timeSpent = (timeTracking[currentSiteKey!].timeSpent || 0) + elapsed;
           timeTracking[currentSiteKey!].lastActive = Date.now();
         }
-        setStorageData({ timeTracking }).catch(() => {
+        setLocalData({ timeTracking }).catch(() => {
           // Ignore errors
         });
       }
@@ -253,7 +256,7 @@ export async function checkTimeLimit(normalizedUrl: string, timeLimits: TimeLimi
   const trackingUpdated = resetDailyTrackingIfNeeded(timeTracking);
   if (trackingUpdated) {
     try {
-      await setStorageData({ timeTracking });
+      await setLocalData({ timeTracking });
     } catch (error) {
       // Extension context invalidated - continue anyway
       const err = error as Error;
@@ -271,7 +274,7 @@ export async function checkTimeLimit(normalizedUrl: string, timeLimits: TimeLimi
       lastActive: 0
     };
     try {
-      await setStorageData({ timeTracking });
+      await setLocalData({ timeTracking });
     } catch (error) {
       // Extension context invalidated - continue anyway
       const err = error as Error;
@@ -283,7 +286,7 @@ export async function checkTimeLimit(normalizedUrl: string, timeLimits: TimeLimi
   
   // Re-read from storage to get latest data (fixes race condition with stopTimeTracking)
   try {
-    const latestResult = await getStorageData(['timeTracking']);
+    const latestResult = await getLocalData(['timeTracking']);
     const latestTimeTracking = (latestResult.timeTracking as TimeTracking) || {};
     if (latestTimeTracking[siteKey]) {
       // Use latest data from storage instead of parameter

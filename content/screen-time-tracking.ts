@@ -1,7 +1,7 @@
 // Screen time tracking — records time spent on every site when enabled
 
 import { getCurrentDateString } from '../utils/time-utils.js';
-import { getStorageData, setStorageData } from '../utils/storage-utils.js';
+import { getLocalData, setLocalData } from '../utils/storage-utils.js';
 import type { ScreenTimeHistory } from '../types/index.js';
 
 let screenTimeInterval: number | null = null;
@@ -27,13 +27,13 @@ function pruneOldEntries(history: ScreenTimeHistory): void {
 
 async function saveElapsed(domain: string, elapsed: number): Promise<void> {
   try {
-    const result = await getStorageData(['screenTimeHistory']);
+    const result = await getLocalData(['screenTimeHistory']);
     const history = (result.screenTimeHistory as ScreenTimeHistory) || {};
     const today = getCurrentDateString();
     if (!history[today]) history[today] = {};
     history[today][domain] = (history[today][domain] || 0) + elapsed;
     pruneOldEntries(history);
-    await setStorageData({ screenTimeHistory: history });
+    await setLocalData({ screenTimeHistory: history });
   } catch {
     // Ignore extension context errors
   }
@@ -88,7 +88,7 @@ function stopInterval(): void {
 
 export async function initScreenTimeTracking(): Promise<void> {
   try {
-    const result = await getStorageData(['screenTimeEnabled']);
+    const result = await getLocalData(['screenTimeEnabled']);
     if (!result.screenTimeEnabled) return;
 
     currentDomain = getDomain();

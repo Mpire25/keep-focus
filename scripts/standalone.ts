@@ -1,6 +1,6 @@
 // Standalone page UI for managing blocked sites
 
-import { getAllData, setStorageData } from '../utils/storage-utils.js';
+import { getAllData, setStorageData, setLocalData } from '../utils/storage-utils.js';
 import { renderBlockedList, renderTimeLimitsList, updateFadeOverlays } from '../ui/list-renderer.js';
 import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, clearError, showTimeLimitError, clearTimeLimitError } from '../ui/form-handlers.js';
 import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule, ScreenTimeHistory } from '../types/index.js';
@@ -227,7 +227,7 @@ function renderScreenTimeSection(): void {
 
 async function toggleScreenTime(): Promise<void> {
   screenTimeEnabled = !screenTimeEnabled;
-  await setStorageData({ screenTimeEnabled });
+  await setLocalData({ screenTimeEnabled });
   renderScreenTimeSection();
 }
 
@@ -577,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Refresh screen time view when storage updates (e.g. tracking in another tab)
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'sync') return;
+    if (area !== 'local') return;
     if (changes.screenTimeHistory) {
       screenTimeHistory = (changes.screenTimeHistory.newValue as ScreenTimeHistory) || {};
       renderScreenTimeSection();
