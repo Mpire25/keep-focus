@@ -8,9 +8,44 @@
 
 import type { ExtensionData } from '../types/index.js';
 
+const STORAGE_MIGRATION_FLAG = 'storageMigratedV2';
+
+function isNonEmptyObject(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && Object.keys(value as Record<string, unknown>).length > 0;
+}
+
+// One-time migration for legacy users where these keys lived in sync storage.
+// Safe for new users: local data always wins; we only copy when local is empty.
+async function migrateLegacyLocalKeysIfNeeded(): Promise<void> {
+  const migrationResult = await chrome.storage.local.get([STORAGE_MIGRATION_FLAG]);
+  if (migrationResult[STORAGE_MIGRATION_FLAG]) {
+    return;
+  }
+
+  const [localLegacy, syncLegacy] = await Promise.all([
+    chrome.storage.local.get(['unlockedUntil', 'timeTracking']),
+    chrome.storage.sync.get(['unlockedUntil', 'timeTracking'])
+  ]);
+
+  const patch: Record<string, unknown> = {};
+
+  if (!isNonEmptyObject(localLegacy.unlockedUntil) && isNonEmptyObject(syncLegacy.unlockedUntil)) {
+    patch.unlockedUntil = syncLegacy.unlockedUntil;
+  }
+
+  if (!isNonEmptyObject(localLegacy.timeTracking) && isNonEmptyObject(syncLegacy.timeTracking)) {
+    patch.timeTracking = syncLegacy.timeTracking;
+  }
+
+  patch[STORAGE_MIGRATION_FLAG] = true;
+  await chrome.storage.local.set(patch);
+}
+
 // Get all extension data from storage
 export async function getAllData(): Promise<ExtensionData> {
   try {
+    await migrateLegacyLocalKeysIfNeeded();
+
     const [syncResult, localResult] = await Promise.all([
       chrome.storage.sync.get(['blockedSites', 'timeLimits', 'darkMode', 'elementBlockingRules']),
       chrome.storage.local.get(['unlockedUntil', 'timeTracking', 'screenTimeEnabled', 'screenTimeHistory'])
