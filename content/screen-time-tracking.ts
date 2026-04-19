@@ -8,8 +8,7 @@ let screenTimeStartTime: number | null = null;
 let currentDomain: string | null = null;
 let isTracking = false;
 let isWindowFocused = true; // assume focused on load; blur fires immediately if not
-let pendingElapsed = 0;     // ms accumulated in memory, flushed to storage every 30s
-let lastFlushTime = 0;
+let pendingElapsed = 0;
 let domListenersSetUp = false;
 
 function getDomain(): string {
@@ -29,12 +28,9 @@ async function saveElapsed(domain: string, elapsed: number): Promise<void> {
   }
 }
 
-const FLUSH_INTERVAL_MS = 30_000;
-
 function startInterval(): void {
   if (screenTimeInterval !== null) return;
   screenTimeStartTime = Date.now();
-  if (lastFlushTime === 0) lastFlushTime = Date.now();
   screenTimeInterval = window.setInterval(async () => {
     if (!screenTimeStartTime || !currentDomain) return;
     const now = Date.now();
@@ -45,11 +41,7 @@ function startInterval(): void {
     }
     screenTimeStartTime = now;
     pendingElapsed += elapsed;
-
-    // Only write to storage every 30 seconds
-    if (now - lastFlushTime >= FLUSH_INTERVAL_MS) {
-      await flushToStorage();
-    }
+    await flushToStorage();
   }, 2000);
 }
 
@@ -57,7 +49,6 @@ async function flushToStorage(): Promise<void> {
   if (!currentDomain || pendingElapsed <= 0) return;
   const toFlush = pendingElapsed;
   pendingElapsed = 0;
-  lastFlushTime = Date.now();
   await saveElapsed(currentDomain, toFlush);
 }
 
