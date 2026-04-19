@@ -177,7 +177,7 @@ function renderMostUsed(): void {
 
     const favicon = document.createElement('img');
     favicon.className = 'st-favicon';
-    favicon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+    favicon.src = `chrome://favicon2/?pageUrl=https://${encodeURIComponent(domain)}&size=32`;
     favicon.alt = '';
 
     const dot = document.createElement('div');
