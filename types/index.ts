@@ -20,6 +20,24 @@ export type UnlockedUntil = Record<string, number>;
 
 export type TimeTracking = Record<string, TimeTrackingData>;
 
+// Keyboard shortcut for the hold-to-show time-remaining toast.
+// ctrlOrMeta matches either Ctrl (Windows/Linux) or Cmd (Mac) so one
+// setting works cross-platform. code is a KeyboardEvent.code value.
+export interface TimeToastShortcut {
+  ctrlOrMeta: boolean;
+  shift: boolean;
+  alt: boolean;
+  code: string;
+}
+
+// Default: Cmd/Ctrl + Shift + Space
+export const DEFAULT_TIME_TOAST_SHORTCUT: TimeToastShortcut = {
+  ctrlOrMeta: true,
+  shift: true,
+  alt: false,
+  code: 'Space'
+};
+
 export interface ElementBlockingRule {
   domain: string;
   selectors: string[];
@@ -42,6 +60,7 @@ export interface ExtensionData {
   elementBlockingRules: ElementBlockingRule[];
   screenTimeEnabled: boolean;
   screenTimeHistory: ScreenTimeHistory;
+  timeToastShortcut: TimeToastShortcut;
 }
 
 export interface ValidationResult {

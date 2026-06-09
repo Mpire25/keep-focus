@@ -255,6 +255,62 @@ body.dark-mode .sidebar-tab-button.active {
   font-weight: 500;
 }
 
+.shortcut-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shortcut-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.shortcut-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shortcut-record-btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 14px;
+  min-width: 180px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.shortcut-record-btn:hover {
+  border-color: var(--accent-color);
+}
+
+.shortcut-record-btn.recording {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.shortcut-reset-btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.shortcut-reset-btn:hover {
+  color: var(--accent-color);
+}
+
 .toggle-switch-label {
   cursor: pointer;
   user-select: none;

@@ -48,7 +48,8 @@
     {
       "resources": [
         "dist/content/*.js",
-        "dist/utils/*.js"
+        "dist/utils/*.js",
+        "dist/types/*.js"
       ],
       "matches": ["<all_urls>"]
     }
