@@ -7,6 +7,7 @@
 import { getStorageData, getLocalData } from '../utils/storage-utils.js';
 import { normalizeUrl, getTimeLimitSiteKey } from '../utils/url-utils.js';
 import { formatTime } from '../utils/time-utils.js';
+import { getSafeTimeToastShortcut, isTimeToastShortcutSafe } from '../utils/shortcut-utils.js';
 import { DEFAULT_TIME_TOAST_SHORTCUT } from '../types/index.js';
 import type { TimeLimit, TimeTracking, TimeToastShortcut } from '../types/index.js';
 
@@ -37,6 +38,7 @@ function isExtensionContextError(error: unknown): boolean {
 
 // True when this keydown event exactly satisfies the configured chord
 function eventMatchesShortcut(e: KeyboardEvent): boolean {
+  if (!isTimeToastShortcutSafe(shortcut)) return false;
   const ctrlOrMeta = e.ctrlKey || e.metaKey;
   return (
     e.code === shortcut.code &&
@@ -293,9 +295,7 @@ export async function initTimeToast(): Promise<void> {
 
   try {
     const result = await getStorageData(['timeToastShortcut']);
-    if (result.timeToastShortcut) {
-      shortcut = result.timeToastShortcut as TimeToastShortcut;
-    }
+    shortcut = getSafeTimeToastShortcut(result.timeToastShortcut);
   } catch (error) {
     if (!isExtensionContextError(error)) throw error;
   }
@@ -304,7 +304,7 @@ export async function initTimeToast(): Promise<void> {
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'sync' && changes.timeToastShortcut?.newValue) {
-        shortcut = changes.timeToastShortcut.newValue as TimeToastShortcut;
+        shortcut = getSafeTimeToastShortcut(changes.timeToastShortcut.newValue);
       }
     });
   } catch {

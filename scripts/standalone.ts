@@ -6,6 +6,7 @@ import { addSite, removeSiteByUrl, addTimeLimit, removeTimeLimit, showError, cle
 import type { BlockedSite, TimeLimit, TimeTracking, ElementBlockingRule, ScreenTimeHistory, TimeToastShortcut } from '../types/index.js';
 import { DEFAULT_TIME_TOAST_SHORTCUT } from '../types/index.js';
 import { formatTime, getCurrentDateString } from '../utils/time-utils.js';
+import { getSafeTimeToastShortcut, isModifierCode, isTimeToastShortcutSafe } from '../utils/shortcut-utils.js';
 import { YOUTUBE_SELECTORS } from '../content/element-blocking.js';
 import { updateExtensionIcon } from '../utils/icon-utils.js';
 
@@ -20,6 +21,7 @@ let screenTimeHistory: ScreenTimeHistory = {};
 let selectedHistoryDate: string | null = null;
 let timeToastShortcut: TimeToastShortcut = DEFAULT_TIME_TOAST_SHORTCUT;
 let recordingShortcut = false;
+let shortcutRecordingHint: string | null = null;
 
 const LEGACY_YOUTUBE_SELECTORS: Partial<Record<keyof typeof YOUTUBE_SELECTORS, string[]>> = {
   suggestedVideos: [
@@ -59,7 +61,7 @@ async function loadData(): Promise<void> {
     elementBlockingRules = result.elementBlockingRules || [];
     screenTimeEnabled = result.screenTimeEnabled || false;
     screenTimeHistory = result.screenTimeHistory || {};
-    timeToastShortcut = result.timeToastShortcut || DEFAULT_TIME_TOAST_SHORTCUT;
+    timeToastShortcut = getSafeTimeToastShortcut(result.timeToastShortcut);
     renderShortcutButton();
     applyDarkMode();
     renderBlockedList(blockedSites, 'blockedList', 'blockedListWrapper');
@@ -385,7 +387,7 @@ function renderShortcutButton(): void {
   const btn = document.getElementById('shortcutRecordBtn');
   if (!btn) return;
   if (recordingShortcut) {
-    btn.textContent = 'Press keys…';
+    btn.textContent = shortcutRecordingHint || 'Press keys…';
     btn.classList.add('recording');
   } else {
     btn.textContent = formatShortcut(timeToastShortcut);
@@ -393,13 +395,9 @@ function renderShortcutButton(): void {
   }
 }
 
-function isModifierCode(code: string): boolean {
-  return code.startsWith('Control') || code.startsWith('Shift') ||
-         code.startsWith('Alt') || code.startsWith('Meta');
-}
-
 function stopRecordingShortcut(): void {
   recordingShortcut = false;
+  shortcutRecordingHint = null;
   document.removeEventListener('keydown', onShortcutKeyDown, true);
   renderShortcutButton();
 }
@@ -418,13 +416,20 @@ async function onShortcutKeyDown(e: KeyboardEvent): Promise<void> {
   // Wait for a non-modifier key to complete the chord
   if (isModifierCode(e.code)) return;
 
-  timeToastShortcut = {
+  const nextShortcut: TimeToastShortcut = {
     ctrlOrMeta: e.ctrlKey || e.metaKey,
     shift: e.shiftKey,
     alt: e.altKey,
     code: e.code
   };
 
+  if (!isTimeToastShortcutSafe(nextShortcut)) {
+    shortcutRecordingHint = 'Use Cmd/Ctrl or Alt';
+    renderShortcutButton();
+    return;
+  }
+
+  timeToastShortcut = nextShortcut;
   stopRecordingShortcut();
   await setStorageData({ timeToastShortcut });
 }
@@ -435,6 +440,7 @@ function startRecordingShortcut(): void {
     return;
   }
   recordingShortcut = true;
+  shortcutRecordingHint = null;
   renderShortcutButton();
   document.addEventListener('keydown', onShortcutKeyDown, true);
 }
