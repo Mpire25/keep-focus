@@ -92,11 +92,15 @@ function injectStyles(darkMode: boolean): void {
       box-shadow: 0 12px 32px ${shadow} !important;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
       pointer-events: none !important;
-      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      will-change: transform, opacity !important;
+      /* Exit: a touch quicker than the entrance */
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.2s ease-out !important;
     }
     #${TOAST_ID}.visible {
       transform: translate(-50%, 0) !important;
       opacity: 1 !important;
+      /* Entrance: gentle glide with a subtle settle, fade in faster than the slide */
+      transition: transform 0.4s cubic-bezier(0.34, 1.23, 0.64, 1), opacity 0.18s ease-out !important;
     }
     #${TOAST_ID} .kf-toast-value {
       all: unset !important;
