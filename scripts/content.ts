@@ -11,6 +11,7 @@
   const { stopTimeTracking } = await import(chrome.runtime.getURL('dist/content/time-tracking.js'));
   const { initElementBlocking, stopElementObserver } = await import(chrome.runtime.getURL('dist/content/element-blocking.js'));
   const { initScreenTimeTracking, stopScreenTimeTracking } = await import(chrome.runtime.getURL('dist/content/screen-time-tracking.js'));
+  const { initTimeToast, stopTimeToast } = await import(chrome.runtime.getURL('dist/content/time-toast.js'));
 
   // Run initial check
   await checkAndBlockSite();
@@ -21,6 +22,9 @@
   // Start screen time tracking (independent of blocking/limits)
   await initScreenTimeTracking();
 
+  // Set up the hold-to-show time-remaining toast
+  await initTimeToast();
+
   // Set up URL change detection
   setupUrlChangeDetection();
 
@@ -30,6 +34,7 @@
     stopTimeTracking();
     stopScreenTimeTracking();
     stopElementObserver();
+    stopTimeToast();
   });
 })();
 

@@ -1,12 +1,13 @@
 // Chrome storage utilities
 //
 // Sync storage: small config that should follow the user across devices
-//   blockedSites, timeLimits, darkMode, elementBlockingRules
+//   blockedSites, timeLimits, darkMode, elementBlockingRules, timeToastShortcut
 //
 // Local storage: device-specific or large data that must not hit sync quota
 //   unlockedUntil, timeTracking, screenTimeEnabled, screenTimeHistory
 
 import type { ExtensionData } from '../types/index.js';
+import { DEFAULT_TIME_TOAST_SHORTCUT } from '../types/index.js';
 
 const STORAGE_MIGRATION_FLAG = 'storageMigratedV2';
 
@@ -47,7 +48,7 @@ export async function getAllData(): Promise<ExtensionData> {
     await migrateLegacyLocalKeysIfNeeded();
 
     const [syncResult, localResult] = await Promise.all([
-      chrome.storage.sync.get(['blockedSites', 'timeLimits', 'darkMode', 'elementBlockingRules']),
+      chrome.storage.sync.get(['blockedSites', 'timeLimits', 'darkMode', 'elementBlockingRules', 'timeToastShortcut']),
       chrome.storage.local.get(['unlockedUntil', 'timeTracking', 'screenTimeEnabled', 'screenTimeHistory'])
     ]);
     return {
@@ -58,7 +59,8 @@ export async function getAllData(): Promise<ExtensionData> {
       darkMode: syncResult.darkMode || false,
       elementBlockingRules: syncResult.elementBlockingRules || [],
       screenTimeEnabled: localResult.screenTimeEnabled || false,
-      screenTimeHistory: localResult.screenTimeHistory || {}
+      screenTimeHistory: localResult.screenTimeHistory || {},
+      timeToastShortcut: syncResult.timeToastShortcut || DEFAULT_TIME_TOAST_SHORTCUT
     };
   } catch (error) {
     const err = error as Error;
@@ -71,7 +73,8 @@ export async function getAllData(): Promise<ExtensionData> {
         darkMode: false,
         elementBlockingRules: [],
         screenTimeEnabled: false,
-        screenTimeHistory: {}
+        screenTimeHistory: {},
+        timeToastShortcut: DEFAULT_TIME_TOAST_SHORTCUT
       };
     }
     throw error;
