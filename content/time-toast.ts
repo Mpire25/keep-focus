@@ -21,9 +21,12 @@ let valueEl: HTMLDivElement | null = null;
 let tickInterval: number | null = null;
 let removeTimeout: number | null = null;
 
-// Resolved at show time so the live tick can keep recomputing remaining time
-let activeSiteKey: string | null = null;
-let activeLimitMs = 0;
+// Local countdown state captured when the toast opens. We count down from a
+// local clock rather than re-reading the tracker's storage, which only
+// checkpoints every 2 seconds (and would make the display jump in 2s steps).
+let baseRemainingMs = 0;
+let baseTimestamp = 0;
+let hasActiveLimit = false;
 
 function isExtensionContextError(error: unknown): boolean {
   const err = error as Error;
@@ -156,17 +159,12 @@ function renderNoLimit(): void {
   valueEl.textContent = 'No time limit on this site';
 }
 
-// Re-read storage and refresh the displayed value (called once per second)
-async function tick(): Promise<void> {
-  if (!activeSiteKey) return;
-  try {
-    const localResult = await getLocalData(['timeTracking']);
-    const timeTracking = (localResult.timeTracking as TimeTracking) || {};
-    const timeSpent = timeTracking[activeSiteKey]?.timeSpent || 0;
-    renderValue(Math.max(0, activeLimitMs - timeSpent));
-  } catch (error) {
-    if (isExtensionContextError(error)) hide();
-  }
+// Refresh the displayed value from a local clock so it counts down smoothly,
+// independent of the tracker's 2-second storage checkpoints. Runs faster than
+// once per second so the displayed second flips right at the boundary.
+function updateDisplay(): void {
+  if (!hasActiveLimit) return;
+  renderValue(Math.max(0, baseRemainingMs - (Date.now() - baseTimestamp)));
 }
 
 // --- Show / hide -------------------------------------------------------------
@@ -218,13 +216,14 @@ async function show(): Promise<void> {
     const result = await computeRemaining();
     if (!isShown) return;
     if (result) {
-      activeSiteKey = result.siteKey;
-      activeLimitMs = result.limitMs;
+      hasActiveLimit = true;
+      baseRemainingMs = result.remainingMs;
+      baseTimestamp = Date.now();
       renderValue(result.remainingMs);
       if (tickInterval !== null) clearInterval(tickInterval);
-      tickInterval = window.setInterval(() => { void tick(); }, 1000);
+      tickInterval = window.setInterval(updateDisplay, 250);
     } else {
-      activeSiteKey = null;
+      hasActiveLimit = false;
       renderNoLimit();
     }
   } catch (error) {
@@ -243,7 +242,7 @@ async function show(): Promise<void> {
 function hide(): void {
   if (!isShown) return;
   isShown = false;
-  activeSiteKey = null;
+  hasActiveLimit = false;
 
   if (tickInterval !== null) {
     clearInterval(tickInterval);
