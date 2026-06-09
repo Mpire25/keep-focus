@@ -19,6 +19,7 @@ let listenersAttached = false;
 let isShown = false;
 let toastEl: HTMLDivElement | null = null;
 let valueEl: HTMLDivElement | null = null;
+let labelEl: HTMLDivElement | null = null;
 let tickInterval: number | null = null;
 let removeTimeout: number | null = null;
 
@@ -112,7 +113,7 @@ function injectStyles(darkMode: boolean): void {
       color: #d4b896 !important;
       text-align: center !important;
     }
-    #${TOAST_ID} .kf-toast-value.kf-toast-nolimit {
+    #${TOAST_ID} .kf-toast-value.kf-toast-status {
       font-size: 16px !important;
       font-weight: 600 !important;
       color: ${text} !important;
@@ -124,6 +125,9 @@ function injectStyles(darkMode: boolean): void {
       letter-spacing: 0.3px !important;
       color: ${label} !important;
       text-align: center !important;
+    }
+    #${TOAST_ID} .kf-toast-label[hidden] {
+      display: none !important;
     }
   `;
   (document.head || document.documentElement).appendChild(style);
@@ -155,14 +159,17 @@ async function computeRemaining(): Promise<{ siteKey: string; limitMs: number; r
 
 function renderValue(remainingMs: number): void {
   if (!valueEl) return;
-  valueEl.classList.remove('kf-toast-nolimit');
-  valueEl.textContent = remainingMs <= 0 ? 'Limit reached' : formatTime(remainingMs) + ' left';
+  const hasTimeRemaining = remainingMs > 0;
+  valueEl.classList.toggle('kf-toast-status', !hasTimeRemaining);
+  valueEl.textContent = hasTimeRemaining ? formatTime(remainingMs) + ' left' : 'No time remaining';
+  if (labelEl) labelEl.hidden = !hasTimeRemaining;
 }
 
 function renderNoLimit(): void {
   if (!valueEl) return;
-  valueEl.classList.add('kf-toast-nolimit');
+  valueEl.classList.add('kf-toast-status');
   valueEl.textContent = 'No time limit on this site';
+  if (labelEl) labelEl.hidden = true;
 }
 
 // Refresh the displayed value from a local clock so it counts down smoothly,
@@ -205,7 +212,7 @@ async function show(): Promise<void> {
     valueEl = document.createElement('div');
     valueEl.className = 'kf-toast-value';
 
-    const labelEl = document.createElement('div');
+    labelEl = document.createElement('div');
     labelEl.className = 'kf-toast-label';
     labelEl.textContent = 'Time remaining';
 
@@ -335,5 +342,6 @@ export function stopTimeToast(): void {
   if (toastEl && toastEl.isConnected) toastEl.remove();
   toastEl = null;
   valueEl = null;
+  labelEl = null;
   isShown = false;
 }
